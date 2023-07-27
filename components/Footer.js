@@ -1,8 +1,11 @@
 import React from "react";
+import {useWindowDimensions} from 'react-native';
+import RenderHtml from 'react-native-render-html';
 
 function Footer() {
-  return (
-    <footer>
+  const {width} = useWindowDimensions();
+  const source = {
+    html: `<footer>
       <h2>Empower Tech Ministry</h2>
       <div id="contact">
         <p>Address: 123 Legendary Street, Cityville, Country</p>
@@ -11,6 +14,8 @@ function Footer() {
         <p>Icons: Facebook, Twitter, LinkedIn, Instagram</p>
       </div>
     </footer>
-  );
+    `,
+  };
+  return <RenderHtml contentWidth={width} source={source} />;
 }
 export default Footer;
