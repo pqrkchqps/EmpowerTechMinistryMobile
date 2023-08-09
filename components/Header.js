@@ -23,7 +23,7 @@ const Navul = styled.View`
 
 const Navli = styled.View`
   padding: 12px;
-  width: 150px;
+  width: 100px;
   margin: 16px;
   height: 44px;
   font-size: 32px;
@@ -36,7 +36,7 @@ const Navli = styled.View`
 
 const P = styled.Text``;
 
-function Header({navigation}) {
+function Header({navigation, handleLogout}) {
   const [useHam, setUseHam] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -56,9 +56,9 @@ function Header({navigation}) {
           <P>Home</P>
         </Navli>
         <Navli
-          name="Services"
-          onStartShouldSetResponder={() => navigation.navigate('Services')}>
-          <P>Services</P>
+          name="Threads"
+          onStartShouldSetResponder={() => navigation.navigate('Threads')}>
+          <P>Threads</P>
         </Navli>
         <Navli
           name="Contact"
@@ -69,6 +69,9 @@ function Header({navigation}) {
           name="About"
           onStartShouldSetResponder={() => navigation.navigate('About')}>
           <P>About</P>
+        </Navli>
+        <Navli name="Logout" onStartShouldSetResponder={() => handleLogout()}>
+          <P>Logout</P>
         </Navli>
       </Navul>
     </SiteHeader>

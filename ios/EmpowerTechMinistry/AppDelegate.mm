@@ -12,7 +12,7 @@
   self.initialProps = @{};
 
   BOOL result = [super application:application didFinishLaunchingWithOptions:launchOptions];
-  self.window.rootViewController.view.backgroundColor = [UIColor colorWithRed:0.87843 green:0.72549 blue:0.73333 alpha:1.00];
+  self.window.rootViewController.view.backgroundColor = [UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:0.10];
   return result;
 
 }
