@@ -1,9 +1,7 @@
 import 'react-native-gesture-handler';
 import React, {useState} from 'react';
 import {FaBars} from 'react-icons/fa';
-import {StyleSheet, Text, View, Button} from 'react-native';
-import {useWindowDimensions} from 'react-native';
-import RenderHtml from 'react-native-render-html';
+import {Text, View} from 'react-native';
 import styled from 'styled-components/native';
 
 const SiteHeader = styled.View`

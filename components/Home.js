@@ -1,14 +1,6 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  SafeAreaView,
-  ScrollView,
-} from 'react-native';
+import {View, Text, StyleSheet, SafeAreaView, ScrollView} from 'react-native';
 import styled from 'styled-components/native';
-import Header from './Header';
 
 // Styled components
 const Container = styled.View`
@@ -20,11 +12,6 @@ const Container = styled.View`
 const Brand = styled.View`
   align-items: center;
   margin-top: 20px;
-`;
-
-const Logo = styled.Image`
-  width: 150px;
-  height: 150px;
 `;
 
 const Title = styled.Text`
@@ -57,11 +44,9 @@ const SectionDescription = styled.Text`
 `;
 
 // Homepage Component
-const Home = ({navigation, route}) => {
-  const {handleLogout} = route.params;
+const Home = () => {
   return (
     <Container>
-      <Header navigation={navigation} handleLogout={handleLogout} />
       <SafeAreaView style={styles.container}>
         <ScrollView>
           <Brand>

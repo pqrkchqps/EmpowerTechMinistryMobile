@@ -1,22 +1,25 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   TextInput,
   FlatList,
 } from 'react-native';
+import {AvoidSoftInput, AvoidSoftInputView} from 'react-native-avoid-softinput';
+
 import styled from 'styled-components/native';
 import axios from 'axios';
 import Config from 'react-native-config';
+import {useFocusEffect} from '@react-navigation/native';
 const {API_URL} = Config;
 
 // Styled components
 const Container = styled.View`
-  flex: 1;
+  display: flex;
   background-color: #ffffff;
+  height: 100%;
   padding: 20px;
 `;
 
@@ -74,6 +77,7 @@ const BackButton = styled.TouchableOpacity`
 const ThreadDetails = ({navigation, route}) => {
   const {thread} = route.params;
   const [newComment, setNewComment] = useState('');
+  const [newReply, setNewReply] = useState('');
   const [rootThread, setRootThread] = useState(thread);
   const [replyingTo, setReplyingTo] = useState(null);
 
@@ -84,13 +88,22 @@ const ThreadDetails = ({navigation, route}) => {
     });
   }, []);
 
+  const onFocusEffect = useCallback(() => {
+    AvoidSoftInput.setShouldMimicIOSBehavior(true);
+    return () => {
+      AvoidSoftInput.setShouldMimicIOSBehavior(false);
+    };
+  }, []);
+
+  useFocusEffect(onFocusEffect);
+
   const handleAddComment = async () => {
     if (newComment.trim() === '') {
       return;
     }
 
     const comment = {
-      content: newComment,
+      content: replyingTo !== null ? newReply : newComment,
       rootid: rootThread.id,
       parentid: replyingTo !== null ? replyingTo : -1,
     };
@@ -101,10 +114,11 @@ const ThreadDetails = ({navigation, route}) => {
     setReplyingTo(null);
 
     setNewComment('');
+    setNewReply('');
   };
 
   const renderItem = ({item}) => (
-    <CommentContainer>
+    <CommentContainer key={item.id}>
       <CommentText>{item.content}</CommentText>
       {/* Show input for posting replies only when replyingTo matches the comment id */}
       {replyingTo === item.id ? (
@@ -112,7 +126,7 @@ const ThreadDetails = ({navigation, route}) => {
           <NewCommentInput
             placeholder="Reply to this comment"
             value={newComment}
-            onChangeText={text => setNewComment(text)}
+            onChangeText={text => setNewReply(text)}
           />
           <CommentButton onPress={handleAddComment}>
             <CommentButtonText>Post Reply</CommentButtonText>
@@ -130,19 +144,17 @@ const ThreadDetails = ({navigation, route}) => {
 
   return (
     <Container>
-      <SafeAreaView style={styles.container}>
-        <BackButton onPress={() => navigation.goBack()}>
-          <Text style={{color: '#007BFF', fontSize: 18}}>Back to Threads</Text>
-        </BackButton>
-
-        <ThreadTitle>{rootThread.title}</ThreadTitle>
-        <ThreadContent>{rootThread.content}</ThreadContent>
-
+      <AvoidSoftInputView>
         {/* Display thread comments */}
         <FlatList
           data={rootThread.children}
           renderItem={renderItem}
-          keyExtractor={item => item.id.toString()}
+          ListHeaderComponent={
+            <>
+              <ThreadTitle>{rootThread.title}</ThreadTitle>
+              <ThreadContent>{rootThread.content}</ThreadContent>
+            </>
+          }
           ListFooterComponent={
             <CommentForm>
               <NewCommentInput
@@ -156,7 +168,7 @@ const ThreadDetails = ({navigation, route}) => {
             </CommentForm>
           }
         />
-      </SafeAreaView>
+      </AvoidSoftInputView>
     </Container>
   );
 };

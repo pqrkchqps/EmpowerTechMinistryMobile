@@ -6,9 +6,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Linking,
 } from 'react-native';
+
 import styled from 'styled-components/native';
-import Header from './Header';
 
 // Styled components
 const Container = styled.View`
@@ -40,37 +41,42 @@ const ContactIcon = styled.Image`
   margin-right: 10px;
 `;
 
-const ContactText = styled.Text`
+const EmailText = styled.Text`
   font-size: 16px;
-  color: #555;
+  color: tomato;
 `;
+
+const MeetingText = styled.Text`
+  font-size: 26px;
+  color: tomato;
+`;
+
+
 
 // Contact Component
 const Contact = ({navigation, route}) => {
-  const {handleLogout} = route.params;
-  const handlePhonePress = () => {
-    // Implement phone call functionality here
+  const handleEmailPress = () => {
+    Linking.openURL('mailto:info@empowertechministry.com')
   };
 
-  const handleEmailPress = () => {
-    // Implement email sending functionality here
+  const handleMeetingPress = () => {
+    navigation.navigate('Meeting')
   };
 
   return (
     <Container>
-      <Header navigation={navigation} handleLogout={handleLogout} />
       <SafeAreaView style={styles.container}>
         <ScrollView>
           <Title>Contact Us</Title>
           <ContactInfo>
             <ContactItem>
-              <TouchableOpacity onPress={handlePhonePress}>
-                <ContactText>Phone: (507) 621-2111</ContactText>
+              <TouchableOpacity onPress={handleEmailPress}>
+                <EmailText>Email: info@empowertechministry.com</EmailText>
               </TouchableOpacity>
             </ContactItem>
             <ContactItem>
-              <TouchableOpacity onPress={handleEmailPress}>
-                <ContactText>Email: info@empowertechministry.com</ContactText>
+              <TouchableOpacity onPress={handleMeetingPress}>
+                <MeetingText>Schedule a Google Meet</MeetingText>
               </TouchableOpacity>
             </ContactItem>
           </ContactInfo>

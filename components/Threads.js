@@ -8,8 +8,13 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
+
+import {
+  wrapScrollView,
+  useScrollIntoView,
+} from 'react-native-scroll-into-view';
+
 import styled from 'styled-components/native';
-import Header from './Header';
 import axios from 'axios';
 import Config from 'react-native-config';
 const {API_URL} = Config;
@@ -65,11 +70,20 @@ const NewThreadContent = styled.TextInput`
 `;
 
 // Threads Component
-const Threads = ({navigation, route}) => {
-  const {handleLogout} = route.params;
+const Threads = ({navigation, newThread, scrollToId}) => {
+  const scrollIntoView = useScrollIntoView();
+  const viewRef = useRef();
+  const [hasScrolled, setHasScrolled] = useState(false);
   const [threads, setThreads] = useState([]);
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [newThreadContent, setNewThreadContent] = useState('');
+
+  useEffect(() => {
+    console.log("newThread", newThread)
+    if (newThread) {
+      setThreads(state => [...state, newThread]);
+    }
+  }, [newThread]);
 
   useEffect(() => {
     const promise = axios.get(API_URL + '/api/thread');
@@ -77,6 +91,19 @@ const Threads = ({navigation, route}) => {
       setThreads(response.data.threads);
     });
   }, []);
+
+
+  useEffect(() => {
+    if (threads.length > 0 && !hasScrolled){
+      scrollIntoView(viewRef.current);
+      setHasScrolled(true);
+    }
+  }, [threads]);
+
+  useEffect(() => {
+    setHasScrolled(false);
+  }, [scrollToId]);
+
 
   const handleAddThread = async () => {
     if (newThreadTitle.trim() === '' || newThreadContent.trim() === '') {
@@ -97,7 +124,6 @@ const Threads = ({navigation, route}) => {
 
   return (
     <Container>
-      <Header navigation={navigation} handleLogout={handleLogout} />
       <SafeAreaView style={styles.container}>
         <ScrollView>
           <Title>Threads</Title>
@@ -106,7 +132,8 @@ const Threads = ({navigation, route}) => {
           {threads.map((thread, index) => (
             <TouchableOpacity
               key={index}
-              onPress={() => navigation.navigate('ThreadDetails', {thread})}>
+              ref={scrollToId === thread.id && viewRef}
+              onPress={() => navigation.navigate('TalkDetails', {thread})}>
               <ThreadItem>
                 <ThreadTitle>{thread.title}</ThreadTitle>
                 <ThreadContent>{thread.content}</ThreadContent>

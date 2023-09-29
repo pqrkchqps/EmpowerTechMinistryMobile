@@ -1,7 +1,6 @@
 import React from 'react';
 import {View, Text, StyleSheet, SafeAreaView, ScrollView} from 'react-native';
 import styled from 'styled-components/native';
-import Header from './Header';
 
 // Styled components
 const Container = styled.View`
@@ -32,15 +31,12 @@ const ServiceDescription = styled.Text`
 `;
 
 // Services Component
-const Services = ({navigation, route}) => {
-  const {handleLogout} = route.params;
+const Services = () => {
   return (
     <Container>
-      <Header navigation={navigation} handleLogout={handleLogout} />
       <SafeAreaView style={styles.container}>
         <ScrollView>
           <Title>Our Services</Title>
-
           <ServiceItem>
             <ServiceTitle>Innovative Web Apps</ServiceTitle>
             <ServiceDescription>

@@ -1,20 +1,17 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  SafeAreaView,
-  ScrollView,
-} from 'react-native';
+import {View, Text, StyleSheet, SafeAreaView, ScrollView} from 'react-native';
 import styled from 'styled-components/native';
-import Header from './Header';
 
 // Styled components
 const Container = styled.View`
   flex: 1;
   background-color: #ffffff;
   padding: 20px;
+`;
+
+const Brand = styled.View`
+  align-items: center;
+  margin-bottom: 20px;
 `;
 
 const Title = styled.Text`
@@ -30,54 +27,72 @@ const Subtitle = styled.Text`
   margin-bottom: 10px;
 `;
 
-const Description = styled.Text`
+const Section = styled.View`
+  margin-top: 20px;
+`;
+
+const SectionTitle = styled.Text`
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+`;
+
+const SectionDescription = styled.Text`
   font-size: 16px;
-  color: #555;
+  color: #333;
+  line-height: 24px;
+  margin-bottom: 20px;
 `;
 
 // About Component
-const About = ({navigation, route}) => {
-  const {handleLogout} = route.params;
+const About = () => {
   return (
     <Container>
-      <Header navigation={navigation} handleLogout={handleLogout} />
       <SafeAreaView style={styles.container}>
         <ScrollView>
-          <Title>About Empower Tech Ministry</Title>
-          <Subtitle>Our Vision: Assisting You in Reaching Your Dreams</Subtitle>
-          <Description>
-            At Empower Tech Ministry, we firmly believe that technology has the
-            power to transform businesses and turn dreams into reality. Our
-            vision is to be the driving force behind your success, providing you
-            with the tools and expertise needed to achieve your goals.
-          </Description>
-          <Description>
-            Our journey began with a small group of passionate tech enthusiasts
-            who wanted to make a difference in the world of business. We
-            realized that many businesses were struggling to keep up with the
-            rapidly evolving digital landscape, and they needed a reliable
-            partner to guide them through this transformative journey.
-          </Description>
-          <Description>
-            With a shared passion for innovation and a customer-centric
-            approach, Empower Tech Ministry was born. Since our inception, we
-            have been committed to empowering businesses with cutting-edge tech
-            solutions and expert guidance. We have witnessed numerous success
-            stories, and nothing brings us more joy than seeing our customers
-            reach their dreams and thrive in the digital age.
-          </Description>
-          <Description>
-            Our team of skilled developers, designers, and digital marketing
-            experts work collaboratively with you to understand your unique
-            needs and challenges. We believe in forging strong partnerships with
-            our clients, aligning our goals with yours, and celebrating your
-            victories as if they were our own.
-          </Description>
-          <Description>
-            Together, let's embark on a journey of growth and transformation.
-            With Empower Tech Ministry by your side, the possibilities are
-            endless, and your dreams are within reach.
-          </Description>
+          <Brand>
+            <Title>Empower Tech Ministry</Title>
+            <Subtitle>Igniting Your Digital Potential</Subtitle>
+          </Brand>
+
+          <Section>
+            <SectionTitle>Why Choose Empower Tech Ministry?</SectionTitle>
+            <SectionDescription>
+              At Empower Tech Ministry, we are driven by a singular vision: to
+              empower individuals like you to excel in the world of web
+              development and digital entrepreneurship. We believe that technology
+              has the power to transform careers and launch businesses, and we're
+              here to make that transformation a reality for you.
+            </SectionDescription>
+          </Section>
+
+          <Section>
+            <SectionTitle>Experience the Power of Empowerment</SectionTitle>
+            <SectionDescription>
+              We understand the challenges and opportunities of the digital age.
+              Our mission is to equip you with the skills, knowledge, and support
+              you need to succeed. Whether you're looking to launch a new career in
+              coding or elevate your business through cutting-edge web services,
+              we're committed to your success.
+            </SectionDescription>
+          </Section>
+
+          <Section>
+            <SectionTitle>Our Services</SectionTitle>
+            <SectionDescription>
+              - Coding Career Launch: Unlock your coding potential with our Coding
+              Career Launch program. We offer a transformative journey into the
+              world of web development, guaranteeing job placement upon completion.
+              {'\n'}- Web Services for Business Growth: Elevate your online
+              presence and business potential with our comprehensive web services.
+              We craft websites, mobile apps, and data-driven solutions that are
+              not just visually stunning but strategically optimized for success.
+              {'\n'}- Digital Marketing Mastery: Stay ahead in the digital
+              landscape with our expert digital marketing strategies. We'll help
+              you reach your target audience through platforms like Google and
+              Facebook.
+            </SectionDescription>
+          </Section>
         </ScrollView>
       </SafeAreaView>
     </Container>

@@ -1,38 +1,48 @@
 import React, {useState, useEffect} from 'react';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import Home from './components/Home';
 import Threads from './components/Threads';
 import ThreadDetails from './components/ThreadDetails';
 import Contact from './components/Contact';
+import Calendly from './components/Calendly';
 import About from './components/About';
+import ButtonScreen from "./components/ButtonScreen"
 import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import {WithSplashScreen} from './components/Splash';
+import notifee, { EventType } from '@notifee/react-native';
+window.navigator.userAgent = 'react-native';
+import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 import Config from 'react-native-config';
-const {API_URL} = Config;
+const {API_URL, SOCKET_URL} = Config;
+import {name as appName} from './app.json';
 
 import {
   View,
   Text,
+  KeyboardAvoidingView,
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import styled from 'styled-components/native';
 import axios from 'axios';
+import {isTemplateSpan} from 'typescript';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-axios.interceptors.request.use(async config => {
-  config.headers['auth-token'] = await AsyncStorage.getItem('authToken');
-  return config;
-});
+const socket = io(SOCKET_URL);
 
 // Styled components
 const Container = styled.View`
-  flex: 1;
+  display: flex;
+  height: 100%;
   background-color: #ffffff;
+`;
+
+const InnerContainer = styled.View`
   padding: 20px;
 `;
 
@@ -89,6 +99,7 @@ const LinkText = styled.Text`
   font-weight: bold;
 `;
 
+const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function App() {
@@ -98,15 +109,101 @@ function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
+  const [newThread, setNewThread] = useState(null);
+  const [newComment, setNewComment] = useState(null);
+  const [routeName, setRouteName] = useState("About")
 
-  useEffect(() => {
+
+  axios.interceptors.request.use(async config => {
+    config.headers['auth-token'] = await AsyncStorage.getItem('authToken');
+    return config;
+  });
+
+  axios.interceptors.response.use(
+    res => {
+      return res;
+    },
+    err => {
+      if (err.response && err.response.status === 401) {
+        setLoggedIn(false);
+        loadLoginDetails();
+      }
+      return Promise.reject(err);
+    },
+  );
+
+  async function onDisplayNotification(title, body, data) {
+    console.log(title, body, id)
+    // Request permissions (required for iOS)
+    await notifee.requestPermission();
+
+    // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+      id: 'default',
+      name: 'Default Channel',
+    });
+
+    // Display a notification
+    await notifee.displayNotification({
+      title,
+      body,
+      data,
+      android: {
+        channelId,
+        // smallIcon: 'name-of-a-small-icon', // optional, defaults to 'ic_launcher'.
+        // // pressAction is needed if you want the notification to open the app when pressed
+        pressAction: {
+          id: 'default',
+        },
+      },
+    });
+  }
+
+  notifee.onBackgroundEvent(async ({ type, detail }) => {
+    const { notification, pressAction } = detail;
+    if (pressAction){
+      switch (notification.data.type){
+        case "thread":
+          setRouteName("Talk")
+      }
+    }
+    console.log(notification, pressAction)
+  });
+
+  function loadLoginDetails() {
     // Check for stored authentication token upon app launch
-
     const credentialsPromise = Keychain.getGenericPassword();
     credentialsPromise.then(credentials => {
       setEmail(credentials.username);
       setPassword(credentials.password);
     });
+  }
+
+  function setSockets() {
+    socket.on('newNotification', notification => {
+      console.log('newNotification', notification);
+      switch (notification.type){
+        case "thread":
+          setNewThread(notification.data);
+          break;
+        case "comment":
+          setNewComment(notification.data)
+          break;
+      }
+      
+      onDisplayNotification(notification.data.title, notification.data.content, 
+        {id: notification.data.id, type: notification.type, parentid: notification.data.parentid});
+    });
+
+    socket.on('ping', function () {
+      console.log('ping recieved, sending pong');
+      socket.emit('pong', {timestamp: new Date().getTime()});
+    });
+  }
+
+  useEffect(() => {
+    setSockets();
+    loadLoginDetails();
   }, []);
 
   const handleLogin = async () => {
@@ -128,8 +225,6 @@ function App() {
 
   const handleRegister = async () => {
     try {
-      console.log(Config);
-      console.log(API_URL + '/api/auth/register');
       const response = await axios.post(API_URL + '/api/auth/register', {
         username,
         email,
@@ -151,7 +246,6 @@ function App() {
       await AsyncStorage.removeItem('authToken');
       await Keychain.resetGenericPassword();
       setLoggedIn(false);
-      console.log('logout');
     } catch (error) {
       console.error('Error while removing authentication token:', error);
       console.log(error);
@@ -161,12 +255,15 @@ function App() {
   useEffect(() => {
     setTimeout(() => {
       setIsAppReady(true);
-    }, 1000);
+    }, 100);
   }, []);
+
   return (
-    <Container>
+    <Container
+      behavior={Platform.OS == 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}>
       {!loggedIn ? (
-        <>
+        <InnerContainer>
           {isRegisterOpen ? (
             <>
               <Title>Register for Empower Tech Ministry</Title>
@@ -224,52 +321,63 @@ function App() {
               </Text>
             </>
           )}
-        </>
+        </InnerContainer>
       ) : (
         <WithSplashScreen isAppReady={isAppReady}>
           <NavigationContainer>
-            <Stack.Navigator initialRouteName="Home">
-              <Stack.Screen
-                name="Home"
-                component={Home}
-                initialParams={{handleLogout}}
-                options={{
+            <Tab.Navigator
+              initialRouteName={routeName}
+              screenOptions={({route}) => ({
+                tabBarIcon: ({focused, color, size}) => {
+                  let iconName;
+                  iconName = focused ? 'rocket' : 'circle';
+                  return <Icon name={iconName} size={size} color={color} />;
+                },
+                tabBarActiveTintColor: 'tomato',
+                tabBarInactiveTintColor: 'gray',
+              })}>
+              <Tab.Group
+                screenOptions={{
                   headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="Threads"
-                component={Threads}
-                initialParams={{handleLogout}}
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="ThreadDetails"
-                component={ThreadDetails}
-                initialParams={{handleLogout}}
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="Contact"
-                component={Contact}
-                initialParams={{handleLogout}}
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="About"
-                component={About}
-                initialParams={{handleLogout}}
-                options={{
-                  headerShown: false,
-                }}
-              />
-            </Stack.Navigator>
+                  handleLogout,
+                }}>
+                <Tab.Screen name="About" component={About} />
+                <Tab.Screen name="Talk">
+                  {() => (
+                    <Stack.Navigator>
+                      <Stack.Screen
+                        name="Talk"
+                        children={(props) => <Threads newThread={newThread} {...props} />}
+                      />
+                      <Stack.Screen
+                        name="TalkDetails"
+                        component={ThreadDetails}
+                      />
+                    </Stack.Navigator>
+                  )}
+                </Tab.Screen>
+                <Tab.Screen name="Contact">
+                  {() => (
+                    <Stack.Navigator>
+                      <Stack.Screen
+                        name="Contact"
+                        component={Contact}
+                      />
+                      <Stack.Screen
+                        name="Meeting"
+                        component={Calendly}
+                      />
+                    </Stack.Navigator>
+                  )}
+                </Tab.Screen>
+                <Tab.Screen 
+                  name="Logout" 
+                  component={ButtonScreen} 
+                  options={({navigation})=> ({
+                            tabBarButton:props => <TouchableOpacity {...props} onPress={()=>handleLogout()} />
+                })} />
+              </Tab.Group>
+            </Tab.Navigator>
           </NavigationContainer>
         </WithSplashScreen>
       )}

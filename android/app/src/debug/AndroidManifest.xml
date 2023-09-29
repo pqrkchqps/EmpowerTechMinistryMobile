@@ -3,7 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-
+    <permission android:name="com.empowertechministry.permission.C2D_MESSAGE" android:protectionLevel="signature" />
+    <uses-permission android:name="com.empowertechministry.permission.C2D_MESSAGE" />
+    
     <application
         android:usesCleartextTraffic="true"
         tools:targetApi="28"
