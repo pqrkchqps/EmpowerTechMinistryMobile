@@ -13,6 +13,8 @@ import styled from 'styled-components/native';
 import axios from 'axios';
 import Config from 'react-native-config';
 import {useFocusEffect} from '@react-navigation/native';
+import RedirectNavigator from './RedirectNavigator';
+
 const {API_URL} = Config;
 
 // Styled components
@@ -75,14 +77,15 @@ const BackButton = styled.TouchableOpacity`
 
 // ThreadDetails Component
 const ThreadDetails = ({navigation, route}) => {
-  const {thread} = route.params;
+  console.log("ROUTE PARAMS", route.params)
+  const {id} = route.params;
   const [newComment, setNewComment] = useState('');
   const [newReply, setNewReply] = useState('');
-  const [rootThread, setRootThread] = useState(thread);
+  const [rootThread, setRootThread] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
 
   useEffect(() => {
-    const promise = axios.get(API_URL + '/api/thread/' + thread.id);
+    const promise = axios.get(API_URL + '/api/thread/' + id);
     promise.then(response => {
       setRootThread(response.data.thread);
     });
@@ -98,17 +101,16 @@ const ThreadDetails = ({navigation, route}) => {
   useFocusEffect(onFocusEffect);
 
   const handleAddComment = async () => {
-    if (newComment.trim() === '') {
-      return;
-    }
-
     const comment = {
       content: replyingTo !== null ? newReply : newComment,
       rootid: rootThread.id,
       parentid: replyingTo !== null ? replyingTo : -1,
     };
+    if (comment.content.trim() === '') {
+      return;
+    }
     await axios.post(API_URL + '/api/comment/thread', comment);
-    const response = await axios.get(API_URL + '/api/thread/' + thread.id);
+    const response = await axios.get(API_URL + '/api/thread/' + id);
 
     setRootThread(response.data.thread);
     setReplyingTo(null);
@@ -125,7 +127,7 @@ const ThreadDetails = ({navigation, route}) => {
         <CommentForm>
           <NewCommentInput
             placeholder="Reply to this comment"
-            value={newComment}
+            value={newReply}
             onChangeText={text => setNewReply(text)}
           />
           <CommentButton onPress={handleAddComment}>
@@ -144,15 +146,16 @@ const ThreadDetails = ({navigation, route}) => {
 
   return (
     <Container>
+      <RedirectNavigator/>
       <AvoidSoftInputView>
         {/* Display thread comments */}
         <FlatList
-          data={rootThread.children}
+          data={rootThread && rootThread.children}
           renderItem={renderItem}
           ListHeaderComponent={
             <>
-              <ThreadTitle>{rootThread.title}</ThreadTitle>
-              <ThreadContent>{rootThread.content}</ThreadContent>
+              <ThreadTitle>{rootThread && rootThread.title}</ThreadTitle>
+              <ThreadContent>{rootThread && rootThread.content}</ThreadContent>
             </>
           }
           ListFooterComponent={

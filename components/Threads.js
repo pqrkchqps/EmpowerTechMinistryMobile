@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,8 @@ import {
 import styled from 'styled-components/native';
 import axios from 'axios';
 import Config from 'react-native-config';
+import RedirectNavigator from './RedirectNavigator';
+
 const {API_URL} = Config;
 
 // Styled components
@@ -69,11 +71,12 @@ const NewThreadContent = styled.TextInput`
   height: 100px;
 `;
 
+
 // Threads Component
 const Threads = ({navigation, newThread, scrollToId}) => {
   const scrollIntoView = useScrollIntoView();
   const viewRef = useRef();
-  const [hasScrolled, setHasScrolled] = useState(false);
+
   const [threads, setThreads] = useState([]);
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [newThreadContent, setNewThreadContent] = useState('');
@@ -94,14 +97,9 @@ const Threads = ({navigation, newThread, scrollToId}) => {
 
 
   useEffect(() => {
-    if (threads.length > 0 && !hasScrolled){
+    if (threads.length > 0){
       scrollIntoView(viewRef.current);
-      setHasScrolled(true);
     }
-  }, [threads]);
-
-  useEffect(() => {
-    setHasScrolled(false);
   }, [scrollToId]);
 
 
@@ -122,23 +120,27 @@ const Threads = ({navigation, newThread, scrollToId}) => {
     setNewThreadContent('');
   };
 
+  console.log("scrollToId", scrollToId)
   return (
     <Container>
+      <RedirectNavigator/>
       <SafeAreaView style={styles.container}>
         <ScrollView>
           <Title>Threads</Title>
 
           {/* Display list of threads */}
-          {threads.map((thread, index) => (
+          {threads.map((thread, index) => ( 
             <TouchableOpacity
               key={index}
-              ref={scrollToId === thread.id && viewRef}
-              onPress={() => navigation.navigate('TalkDetails', {thread})}>
+              ref={scrollToId == thread.id ? viewRef : null}
+              onPress={() => navigation.navigate('Talk Details', {id: thread.id})}>
               <ThreadItem>
                 <ThreadTitle>{thread.title}</ThreadTitle>
                 <ThreadContent>{thread.content}</ThreadContent>
+                {scrollToId == thread.id && console.log(thread.id)}
               </ThreadItem>
             </TouchableOpacity>
+            
           ))}
 
           {/* Form to create a new thread */}

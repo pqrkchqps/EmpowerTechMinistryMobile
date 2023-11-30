@@ -1,5 +1,6 @@
 const { useWindowDimensions } = require("react-native");
 import { WebView } from 'react-native-webview';
+import RedirectNavigator from './RedirectNavigator';
 
 
 const Calendly = ({navigation, route}) => {
@@ -20,14 +21,17 @@ const Calendly = ({navigation, route}) => {
     };
 
     return (
-        <WebView
-            scalesPageToFit={true}
-            bounces={false}
-            javaScriptEnabled
-            style={{height: height, width: width*scale*1.3}}
-            source={calendly}
-            automaticallyAdjustContentInsets={false}
-          />
+        <>
+            <RedirectNavigator/>
+            <WebView
+                scalesPageToFit={true}
+                bounces={false}
+                javaScriptEnabled
+                style={{height: height, width: width*scale*1.3}}
+                source={calendly}
+                automaticallyAdjustContentInsets={false}
+            />
+        </>
     );
 };
 

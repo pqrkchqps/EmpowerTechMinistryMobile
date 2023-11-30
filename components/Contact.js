@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import styled from 'styled-components/native';
+import RedirectNavigator from './RedirectNavigator';
 
 // Styled components
 const Container = styled.View`
@@ -54,7 +55,7 @@ const MeetingText = styled.Text`
 
 
 // Contact Component
-const Contact = ({navigation, route}) => {
+const Contact = ({navigation}) => {
   const handleEmailPress = () => {
     Linking.openURL('mailto:info@empowertechministry.com')
   };
@@ -65,6 +66,7 @@ const Contact = ({navigation, route}) => {
 
   return (
     <Container>
+      <RedirectNavigator />
       <SafeAreaView style={styles.container}>
         <ScrollView>
           <Title>Contact Us</Title>

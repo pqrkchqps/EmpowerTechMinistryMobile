@@ -1,6 +1,8 @@
 import React from 'react';
 import {View, Text, StyleSheet, SafeAreaView, ScrollView} from 'react-native';
 import styled from 'styled-components/native';
+import RedirectNavigator from './RedirectNavigator';
+
 
 // Styled components
 const Container = styled.View`
@@ -45,9 +47,10 @@ const SectionDescription = styled.Text`
 `;
 
 // About Component
-const About = () => {
+const About = ({}) => {
   return (
     <Container>
+      <RedirectNavigator/>
       <SafeAreaView style={styles.container}>
         <ScrollView>
           <Brand>

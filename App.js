@@ -9,7 +9,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {WithSplashScreen} from './components/Splash';
-import notifee, { EventType } from '@notifee/react-native';
+import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
 window.navigator.userAgent = 'react-native';
 import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,6 +32,9 @@ import styled from 'styled-components/native';
 import axios from 'axios';
 import {isTemplateSpan} from 'typescript';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { wrapScrollView } from 'react-native-scroll-into-view';
+import {RouteContext, RouteProvider} from "./components/RouteContext"
+import { useContext } from 'react';
 
 const socket = io(SOCKET_URL);
 
@@ -102,7 +105,9 @@ const LinkText = styled.Text`
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-function App() {
+const WrappedScrollView = wrapScrollView(ScrollView)
+
+export function App() {
   const [isAppReady, setIsAppReady] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [username, setUsername] = useState('');
@@ -111,7 +116,10 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [newThread, setNewThread] = useState(null);
   const [newComment, setNewComment] = useState(null);
-  const [routeName, setRouteName] = useState("About")
+
+  const {setRouteName, setRouteParams} = useContext(RouteContext)
+
+
 
 
   axios.interceptors.request.use(async config => {
@@ -132,43 +140,72 @@ function App() {
     },
   );
 
-  async function onDisplayNotification(title, body, data) {
-    console.log(title, body, id)
-    // Request permissions (required for iOS)
-    await notifee.requestPermission();
+  async function displayNotification(title, body, data) {
+    try {
+      console.log("displayNotification", title, body, data)
 
-    // Create a channel (required for Android)
-    const channelId = await notifee.createChannel({
-      id: 'default',
-      name: 'Default Channel',
-    });
+      // Request permissions (required for iOS)
+      await notifee.requestPermission();
 
-    // Display a notification
-    await notifee.displayNotification({
-      title,
-      body,
-      data,
-      android: {
-        channelId,
-        // smallIcon: 'name-of-a-small-icon', // optional, defaults to 'ic_launcher'.
-        // // pressAction is needed if you want the notification to open the app when pressed
-        pressAction: {
-          id: 'default',
+      // Create a channel (required for Android)
+      const channelId = await notifee.createChannel({
+        id: 'talk_activity',
+        name: 'Talk Activity',
+        importance: AndroidImportance.HIGH, 
+      });
+
+      // Display a notification
+      await notifee.displayNotification({
+        title,
+        body,
+        data,
+        android: {
+          channelId,
+          // smallIcon: 'name-of-a-small-icon', // optional, defaults to 'ic_launcher'.
+          // // pressAction is needed if you want the notification to open the app when pressed
+          pressAction: {
+            id: 'default',
+          },
         },
-      },
-    });
+      });
+    } catch (e) {
+      console.log("err: ", e)
+    }
   }
 
-  notifee.onBackgroundEvent(async ({ type, detail }) => {
+  notifee.onBackgroundEvent(({ type, detail }) => {
     const { notification, pressAction } = detail;
+    console.log(type, detail)
     if (pressAction){
       switch (notification.data.type){
         case "thread":
+          setRouteParams({id: notification.data.id})
           setRouteName("Talk")
       }
     }
     console.log(notification, pressAction)
   });
+
+  useEffect(() => {
+    return notifee.onForegroundEvent(async ({ type, detail }) => {
+      switch (type) {
+        case EventType.DISMISSED:
+          console.log('User dismissed notification', detail.notification);
+          break;
+        case EventType.PRESS:
+          const { notification, pressAction } = detail;
+
+          console.log('User pressed notification', detail.notification);
+          switch (notification.data.type){
+            case "thread":
+              //setScrollToThreadId(notification.data.id)
+              setRouteParams({id: notification.data.id})
+              setRouteName("Talk Details")
+          }
+          break;
+      }
+    });
+  }, []);
 
   function loadLoginDetails() {
     // Check for stored authentication token upon app launch
@@ -180,23 +217,23 @@ function App() {
   }
 
   function setSockets() {
-    socket.on('newNotification', notification => {
+    socket.on('newNotification', async notification => {
       console.log('newNotification', notification);
       switch (notification.type){
         case "thread":
           setNewThread(notification.data);
+          displayNotification(notification.data.title, notification.data.content, 
+        {id: notification.data.id, type: notification.type});
           break;
         case "comment":
           setNewComment(notification.data)
+          displayNotification(notification.data.title, notification.data.content, 
+        {id: notification.data.id, type: notification.type, parentid: notification.data.parentid});
           break;
       }
-      
-      onDisplayNotification(notification.data.title, notification.data.content, 
-        {id: notification.data.id, type: notification.type, parentid: notification.data.parentid});
     });
 
     socket.on('ping', function () {
-      console.log('ping recieved, sending pong');
       socket.emit('pong', {timestamp: new Date().getTime()});
     });
   }
@@ -325,64 +362,68 @@ function App() {
       ) : (
         <WithSplashScreen isAppReady={isAppReady}>
           <NavigationContainer>
-            <Tab.Navigator
-              initialRouteName={routeName}
-              screenOptions={({route}) => ({
-                tabBarIcon: ({focused, color, size}) => {
-                  let iconName;
-                  iconName = focused ? 'rocket' : 'circle';
-                  return <Icon name={iconName} size={size} color={color} />;
-                },
-                tabBarActiveTintColor: 'tomato',
-                tabBarInactiveTintColor: 'gray',
-              })}>
-              <Tab.Group
-                screenOptions={{
-                  headerShown: false,
-                  handleLogout,
-                }}>
-                <Tab.Screen name="About" component={About} />
-                <Tab.Screen name="Talk">
-                  {() => (
-                    <Stack.Navigator>
-                      <Stack.Screen
-                        name="Talk"
-                        children={(props) => <Threads newThread={newThread} {...props} />}
-                      />
-                      <Stack.Screen
-                        name="TalkDetails"
-                        component={ThreadDetails}
-                      />
-                    </Stack.Navigator>
-                  )}
-                </Tab.Screen>
-                <Tab.Screen name="Contact">
-                  {() => (
-                    <Stack.Navigator>
-                      <Stack.Screen
-                        name="Contact"
-                        component={Contact}
-                      />
-                      <Stack.Screen
-                        name="Meeting"
-                        component={Calendly}
-                      />
-                    </Stack.Navigator>
-                  )}
-                </Tab.Screen>
-                <Tab.Screen 
-                  name="Logout" 
-                  component={ButtonScreen} 
-                  options={({navigation})=> ({
-                            tabBarButton:props => <TouchableOpacity {...props} onPress={()=>handleLogout()} />
-                })} />
-              </Tab.Group>
-            </Tab.Navigator>
+            <WrappedScrollView 
+              contentContainerStyle={{
+                flex: 1,
+                justifyContent: 'space-between'
+              }}>
+              <Tab.Navigator
+                initialRouteName="About"
+                screenOptions={({route}) => ({
+                  tabBarIcon: ({focused, color, size}) => {
+                    let iconName;
+                    iconName = focused ? 'rocket' : 'circle';
+                    return <Icon name={iconName} size={size} color={color} />;
+                  },
+                  tabBarActiveTintColor: 'tomato',
+                  tabBarInactiveTintColor: 'gray',
+                })}>
+                <Tab.Group
+                  screenOptions={{
+                    headerShown: false,
+                    handleLogout,
+                  }}>
+                  <Tab.Screen name="About" component={About} />
+                  <Tab.Screen name="Talk">
+                    {() => (
+                      <Stack.Navigator>
+                        <Stack.Screen
+                          name="Talk "
+                          children={(props) => <Threads newThread={newThread} {...props} />}
+                        />
+                        <Stack.Screen
+                          name="Talk Details"
+                          component={ThreadDetails}
+                        />
+                      </Stack.Navigator>
+                    )}
+                  </Tab.Screen>
+                  <Tab.Screen name="Contact">
+                    {() => (
+                      <Stack.Navigator>
+                        <Stack.Screen
+                          name="Contact"
+                          component={Contact}
+                        />
+                        <Stack.Screen
+                          name="Meeting"
+                          component={Calendly}
+                        />
+                      </Stack.Navigator>
+                    )}
+                  </Tab.Screen>
+                  <Tab.Screen 
+                    name="Logout" 
+                    component={ButtonScreen} 
+                    options={({navigation})=> ({
+                              tabBarButton:props => <TouchableOpacity {...props} onPress={()=>handleLogout()} />
+                  })} />
+                </Tab.Group>
+              </Tab.Navigator>
+            </WrappedScrollView>
           </NavigationContainer>
         </WithSplashScreen>
       )}
     </Container>
   );
 }
-
-export default App;
