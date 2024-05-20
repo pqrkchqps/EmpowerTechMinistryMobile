@@ -1,20 +1,28 @@
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useContext,
+  useLayoutEffect,
+} from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   TouchableOpacity,
   TextInput,
   FlatList,
 } from 'react-native';
 import {AvoidSoftInput, AvoidSoftInputView} from 'react-native-avoid-softinput';
+import {CommentContext} from './CommentContext';
+import {ThreadContext} from './ThreadContext';
 
 import styled from 'styled-components/native';
 import axios from 'axios';
 import Config from 'react-native-config';
 import {useFocusEffect} from '@react-navigation/native';
-import RedirectNavigator from './RedirectNavigator';
-
 const {API_URL} = Config;
 
 // Styled components
@@ -35,17 +43,47 @@ const ThreadTitle = styled.Text`
 const ThreadContent = styled.Text`
   font-size: 16px;
   color: #666;
+  margin: 5px;
+`;
+
+const ThreadAuthorDetails = styled.Text`
+  font-size: 16px;
+  color: #700;
+  margin: 5px;
+`;
+
+const ThreadDateDetails = styled.Text`
+  font-size: 16px;
+  color: #888;
+  margin: 5px;
 `;
 
 const CommentContainer = styled.View`
   border: 1px solid #ccc;
-  padding: 10px;
+  border-right-width: 0px;
+  padding: 10px 0px 10px 10px;
   margin-bottom: 10px;
+`;
+
+const HeadingContainer = styled.View`
+  display: flex;
+  flex-direction: row;
 `;
 
 const CommentText = styled.Text`
   font-size: 14px;
   color: #333;
+  margin: 5px;
+`;
+
+const CommentAuthorDetails = styled.Text`
+  color: #700;
+  margin: 5px;
+`;
+
+const CommentDateDetails = styled.Text`
+  color: #888;
+  margin: 5px;
 `;
 
 const CommentForm = styled.View`
@@ -64,6 +102,7 @@ const NewCommentInput = styled.TextInput`
 
 const CommentButton = styled.TouchableOpacity`
   margin-top: 10px;
+  margin: 5px;
 `;
 
 const CommentButtonText = styled.Text`
@@ -76,20 +115,89 @@ const BackButton = styled.TouchableOpacity`
 `;
 
 // ThreadDetails Component
-const ThreadDetails = ({navigation, route}) => {
-  console.log("ROUTE PARAMS", route.params)
-  const {id} = route.params;
+const ThreadDetails = () => {
+  const {socketComment, scrollToId, setScrollToId} = useContext(CommentContext);
+  const {threadId} = useContext(ThreadContext);
+  const scrollFromRef = useRef(null);
+  function useHookWithRefCallback() {
+    const ref = useRef(null);
+    const setRef = useCallback(node => {
+      if (ref.current) {
+        // Make sure to cleanup any events/references added to the last instance
+      }
+
+      if (node && scrollFromRef && scrollFromRef.current) {
+        setReplyingTo(scrollToId);
+        scrollFromRef.current.scrollTo({x: 0, y: 0, animated: false});
+        setTimeout(() => {
+          node.measure((x, y, width, height, pageX, pageY) => {
+            console.log(x, y, width, height, pageX, pageY);
+            scrollFromRef.current.scrollTo({
+              x: 0,
+              y: pageY - 100 - 100,
+              animated: true,
+            });
+          });
+        }, 1000);
+        setScrollToId(null);
+      }
+
+      // Save a reference to the node
+      ref.current = node;
+    }, []);
+
+    return [setRef];
+  }
+  const [scrollToRef] = useHookWithRefCallback();
+
   const [newComment, setNewComment] = useState('');
   const [newReply, setNewReply] = useState('');
   const [rootThread, setRootThread] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [diablePostReply, setDiablePostReply] = useState(false);
+
+  function addCommentToRootThread(newComment) {
+    if (rootThread) {
+      if (newComment.parentid == -1) {
+        rootThread.children.push(newComment);
+      } else {
+        let chs = rootThread.children;
+        console.log('chs', chs);
+        let queue = [...rootThread.children];
+        while (queue.length > 0) {
+          let currentComment = queue.shift();
+          if (currentComment) {
+            if (currentComment.id == newComment.parentid) {
+              currentComment.children.push(newComment);
+              break;
+            } else {
+              currentComment.children.map(comment => {
+                queue.push(comment);
+              });
+            }
+          }
+        }
+      }
+      let newRootThread = JSON.parse(JSON.stringify(rootThread));
+      setRootThread(newRootThread);
+    }
+  }
 
   useEffect(() => {
-    const promise = axios.get(API_URL + '/api/thread/' + id);
-    promise.then(response => {
-      setRootThread(response.data.thread);
-    });
-  }, []);
+    if (threadId) {
+      const promise = axios.get(API_URL + '/api/thread/' + threadId);
+      promise.then(response => {
+        setRootThread(response.data.thread);
+      });
+    }
+  }, [threadId]);
+
+  useEffect(() => {
+    console.log('Socket comment', socketComment);
+    if (socketComment) {
+      addCommentToRootThread(socketComment);
+    }
+  }, [socketComment]);
 
   const onFocusEffect = useCallback(() => {
     AvoidSoftInput.setShouldMimicIOSBehavior(true);
@@ -101,28 +209,37 @@ const ThreadDetails = ({navigation, route}) => {
   useFocusEffect(onFocusEffect);
 
   const handleAddComment = async () => {
-    const comment = {
-      content: replyingTo !== null ? newReply : newComment,
-      rootid: rootThread.id,
-      parentid: replyingTo !== null ? replyingTo : -1,
-    };
-    if (comment.content.trim() === '') {
-      return;
+    if (!diablePostReply) {
+      const comment = {
+        content: replyingTo !== null ? newReply : newComment,
+        rootid: rootThread.id,
+        parentid: replyingTo !== null ? replyingTo : -1,
+      };
+      if (comment.content.trim() === '') {
+        return;
+      }
+      setDiablePostReply(true);
+      await axios.post(API_URL + '/api/comment/thread', comment);
+      setDiablePostReply(false);
+
+      setReplyingTo(null);
+
+      setNewComment('');
+      setNewReply('');
     }
-    await axios.post(API_URL + '/api/comment/thread', comment);
-    const response = await axios.get(API_URL + '/api/thread/' + id);
-
-    setRootThread(response.data.thread);
-    setReplyingTo(null);
-
-    setNewComment('');
-    setNewReply('');
   };
 
-  const renderItem = ({item}) => (
-    <CommentContainer key={item.id}>
+  const renderItem = item => (
+    <CommentContainer
+      ref={scrollToId == item.id ? scrollToRef : null}
+      key={item.id}>
+      <HeadingContainer>
+        <CommentAuthorDetails>{item.username}</CommentAuthorDetails>
+        <CommentDateDetails>
+          {item.month}/{item.day}/{item.year}
+        </CommentDateDetails>
+      </HeadingContainer>
       <CommentText>{item.content}</CommentText>
-      {/* Show input for posting replies only when replyingTo matches the comment id */}
       {replyingTo === item.id ? (
         <CommentForm>
           <NewCommentInput
@@ -130,47 +247,50 @@ const ThreadDetails = ({navigation, route}) => {
             value={newReply}
             onChangeText={text => setNewReply(text)}
           />
-          <CommentButton onPress={handleAddComment}>
+          <CommentButton disabled={diablePostReply} onPress={handleAddComment}>
             <CommentButtonText>Post Reply</CommentButtonText>
           </CommentButton>
         </CommentForm>
       ) : (
-        <TouchableOpacity onPress={() => setReplyingTo(item.id)}>
-          <Text style={{color: '#007BFF', fontSize: 16}}>Reply</Text>
-        </TouchableOpacity>
+        <CommentButton onPress={() => setReplyingTo(item.id)}>
+          <CommentButtonText>Reply</CommentButtonText>
+        </CommentButton>
       )}
       {/* Display nested comments (replies) */}
-      {item.children.map(item => renderItem({item}))}
+      {item.children.map(item => renderItem(item))}
     </CommentContainer>
   );
 
   return (
     <Container>
-      <RedirectNavigator/>
       <AvoidSoftInputView>
         {/* Display thread comments */}
-        <FlatList
-          data={rootThread && rootThread.children}
-          renderItem={renderItem}
-          ListHeaderComponent={
-            <>
-              <ThreadTitle>{rootThread && rootThread.title}</ThreadTitle>
-              <ThreadContent>{rootThread && rootThread.content}</ThreadContent>
-            </>
-          }
-          ListFooterComponent={
-            <CommentForm>
-              <NewCommentInput
-                placeholder="Write a comment..."
-                value={newComment}
-                onChangeText={text => setNewComment(text)}
-              />
-              <CommentButton onPress={handleAddComment}>
-                <CommentButtonText>Post Comment</CommentButtonText>
-              </CommentButton>
-            </CommentForm>
-          }
-        />
+        <ScrollView ref={scrollFromRef}>
+          <ThreadTitle>{rootThread && rootThread.title}</ThreadTitle>
+          <HeadingContainer>
+            <ThreadAuthorDetails>
+              {rootThread && rootThread.username}
+            </ThreadAuthorDetails>
+            <ThreadDateDetails>
+              {rootThread && rootThread.month}/{rootThread && rootThread.day}
+              {'/'}
+              {rootThread && rootThread.year}
+            </ThreadDateDetails>
+          </HeadingContainer>
+          <ThreadContent>{rootThread && rootThread.content}</ThreadContent>
+          {rootThread &&
+            rootThread.children.map(comment => renderItem(comment))}
+          <CommentForm>
+            <NewCommentInput
+              placeholder="Write a comment..."
+              value={newComment}
+              onChangeText={text => setNewComment(text)}
+            />
+            <CommentButton onPress={handleAddComment}>
+              <CommentButtonText>Post Comment</CommentButtonText>
+            </CommentButton>
+          </CommentForm>
+        </ScrollView>
       </AvoidSoftInputView>
     </Container>
   );

@@ -1,23 +1,19 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-
-import {
-  wrapScrollView,
-  useScrollIntoView,
-} from 'react-native-scroll-into-view';
 
 import styled from 'styled-components/native';
 import axios from 'axios';
 import Config from 'react-native-config';
 import RedirectNavigator from './RedirectNavigator';
+import {ThreadContext} from './ThreadContext';
 
 const {API_URL} = Config;
 
@@ -36,7 +32,7 @@ const Title = styled.Text`
 `;
 
 const ThreadItem = styled.View`
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 `;
 
 const ThreadTitle = styled.Text`
@@ -47,6 +43,21 @@ const ThreadTitle = styled.Text`
 
 const ThreadContent = styled.Text`
   color: #666;
+`;
+
+const ThreadAuthorDetails = styled.Text`
+  color: #700;
+  margin: 5px 5px 5px 0px;
+`;
+
+const ThreadDateDetails = styled.Text`
+  color: #888;
+  margin: 5px;
+`;
+
+const HeadingContainer = styled.View`
+  display: flex;
+  flex-direction: row;
 `;
 
 const NewThreadForm = styled.View`
@@ -71,22 +82,18 @@ const NewThreadContent = styled.TextInput`
   height: 100px;
 `;
 
-
 // Threads Component
-const Threads = ({navigation, newThread, scrollToId}) => {
-  const scrollIntoView = useScrollIntoView();
-  const viewRef = useRef();
-
+const Threads = ({navigation, scrollToId}) => {
+  const {socketThread, setThreadId} = useContext(ThreadContext);
   const [threads, setThreads] = useState([]);
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [newThreadContent, setNewThreadContent] = useState('');
 
   useEffect(() => {
-    console.log("newThread", newThread)
-    if (newThread) {
-      setThreads(state => [...state, newThread]);
+    if (socketThread) {
+      setThreads(state => [...state, socketThread]);
     }
-  }, [newThread]);
+  }, [socketThread]);
 
   useEffect(() => {
     const promise = axios.get(API_URL + '/api/thread');
@@ -94,14 +101,6 @@ const Threads = ({navigation, newThread, scrollToId}) => {
       setThreads(response.data.threads);
     });
   }, []);
-
-
-  useEffect(() => {
-    if (threads.length > 0){
-      scrollIntoView(viewRef.current);
-    }
-  }, [scrollToId]);
-
 
   const handleAddThread = async () => {
     if (newThreadTitle.trim() === '' || newThreadContent.trim() === '') {
@@ -120,50 +119,60 @@ const Threads = ({navigation, newThread, scrollToId}) => {
     setNewThreadContent('');
   };
 
-  console.log("scrollToId", scrollToId)
+  const handleClickThread = async threadId => {
+    setThreadId(threadId);
+    navigation.navigate('Talk Details');
+  };
+
+  const renderItem = ({item: thread}) => (
+    <TouchableOpacity
+      id={thread.id}
+      onPress={handleClickThread.bind(this, thread.id)}>
+      <ThreadItem>
+        <ThreadTitle>{thread.title}</ThreadTitle>
+        <HeadingContainer>
+          <ThreadAuthorDetails>{thread.username}</ThreadAuthorDetails>
+          <ThreadDateDetails>
+            {thread.month}/{thread.day}/{thread.year}
+          </ThreadDateDetails>
+        </HeadingContainer>
+        <ThreadContent>{thread.content}</ThreadContent>
+        {scrollToId == thread.id && console.log(thread.id)}
+      </ThreadItem>
+    </TouchableOpacity>
+  );
+
   return (
     <Container>
-      <RedirectNavigator/>
+      <RedirectNavigator />
       <SafeAreaView style={styles.container}>
-        <ScrollView>
-          <Title>Threads</Title>
-
-          {/* Display list of threads */}
-          {threads.map((thread, index) => ( 
-            <TouchableOpacity
-              key={index}
-              ref={scrollToId == thread.id ? viewRef : null}
-              onPress={() => navigation.navigate('Talk Details', {id: thread.id})}>
-              <ThreadItem>
-                <ThreadTitle>{thread.title}</ThreadTitle>
-                <ThreadContent>{thread.content}</ThreadContent>
-                {scrollToId == thread.id && console.log(thread.id)}
-              </ThreadItem>
-            </TouchableOpacity>
-            
-          ))}
-
-          {/* Form to create a new thread */}
-          <NewThreadForm>
-            <NewThreadTitle
-              placeholder="Thread Title"
-              value={newThreadTitle}
-              onChangeText={text => setNewThreadTitle(text)}
-            />
-            <NewThreadContent
-              multiline
-              placeholder="Thread Content"
-              value={newThreadContent}
-              onChangeText={text => setNewThreadContent(text)}
-            />
-            <TouchableOpacity onPress={handleAddThread}>
-              <Text
-                style={{color: '#007BFF', fontSize: 18, textAlign: 'center'}}>
-                Create Thread
-              </Text>
-            </TouchableOpacity>
-          </NewThreadForm>
-        </ScrollView>
+        <FlatList
+          ListHeaderComponent={<Title>Threads</Title>}
+          data={threads}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => 'key-' + item.id}
+          ListFooterComponent={
+            <NewThreadForm>
+              <NewThreadTitle
+                placeholder="Thread Title"
+                value={newThreadTitle}
+                onChangeText={text => setNewThreadTitle(text)}
+              />
+              <NewThreadContent
+                multiline
+                placeholder="Thread Content"
+                value={newThreadContent}
+                onChangeText={text => setNewThreadContent(text)}
+              />
+              <TouchableOpacity onPress={handleAddThread}>
+                <Text
+                  style={{color: '#007BFF', fontSize: 18, textAlign: 'center'}}>
+                  Create Thread
+                </Text>
+              </TouchableOpacity>
+            </NewThreadForm>
+          }
+        />
       </SafeAreaView>
     </Container>
   );

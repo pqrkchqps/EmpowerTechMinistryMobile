@@ -5,7 +5,7 @@ export const RouteContext = createContext()
 export function RouteProvider({children}){
     const [routeName, setRouteName] = useState(null);
     const [routeParams, setRouteParams] = useState(null);
-    const [scrollToThreadId, setScrollToThreadId] = useState(null);
+
     function resetRouteVars() {
         setRouteName(null)
         setRouteParams(null)

@@ -35,6 +35,8 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { wrapScrollView } from 'react-native-scroll-into-view';
 import {RouteContext, RouteProvider} from "./components/RouteContext"
 import { useContext } from 'react';
+import {CommentContext} from './components/CommentContext';
+import {ThreadContext} from './components/ThreadContext';
 
 const socket = io(SOCKET_URL);
 
@@ -105,7 +107,7 @@ const LinkText = styled.Text`
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const WrappedScrollView = wrapScrollView(ScrollView)
+const WrappedScrollView = wrapScrollView(ScrollView);
 
 export function App() {
   const [isAppReady, setIsAppReady] = useState(false);
@@ -114,13 +116,10 @@ export function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
-  const [newThread, setNewThread] = useState(null);
-  const [newComment, setNewComment] = useState(null);
 
-  const {setRouteName, setRouteParams} = useContext(RouteContext)
-
-
-
+  const {setRouteName} = useContext(RouteContext);
+  const {setSocketComment, setScrollToId} = useContext(CommentContext);
+  const {setSocketThread, setThreadId} = useContext(ThreadContext);
 
   axios.interceptors.request.use(async config => {
     config.headers['auth-token'] = await AsyncStorage.getItem('authToken');
@@ -142,7 +141,7 @@ export function App() {
 
   async function displayNotification(title, body, data) {
     try {
-      console.log("displayNotification", title, body, data)
+      console.log('displayNotification', title, body, data);
 
       // Request permissions (required for iOS)
       await notifee.requestPermission();
@@ -151,7 +150,7 @@ export function App() {
       const channelId = await notifee.createChannel({
         id: 'talk_activity',
         name: 'Talk Activity',
-        importance: AndroidImportance.HIGH, 
+        importance: AndroidImportance.HIGH,
       });
 
       // Display a notification
@@ -169,42 +168,41 @@ export function App() {
         },
       });
     } catch (e) {
-      console.log("err: ", e)
+      console.log('err: ', e);
     }
   }
 
-  notifee.onBackgroundEvent(({ type, detail }) => {
-    const { notification, pressAction } = detail;
-    console.log(type, detail)
-    if (pressAction){
-      switch (notification.data.type){
-        case "thread":
-          setRouteParams({id: notification.data.id})
-          setRouteName("Talk")
-      }
+  function handleNotificationClick(type, detail) {
+    switch (type) {
+      case EventType.DISMISSED:
+        console.log('User dismissed notification', detail.notification);
+        break;
+      case EventType.PRESS:
+        const {notification, pressAction} = detail;
+
+        console.log('User pressed notification', detail.notification);
+        switch (notification.data.type) {
+          case 'thread':
+            setThreadId(notification.data.id);
+            setScrollToId(null);
+            setRouteName('Talk Details');
+            break;
+          case 'comment':
+            setThreadId(notification.data.id);
+            setScrollToId(notification.data.scrollToId);
+            setRouteName('Talk Details');
+            break;
+        }
     }
-    console.log(notification, pressAction)
-  });
+  }
 
   useEffect(() => {
-    return notifee.onForegroundEvent(async ({ type, detail }) => {
-      switch (type) {
-        case EventType.DISMISSED:
-          console.log('User dismissed notification', detail.notification);
-          break;
-        case EventType.PRESS:
-          const { notification, pressAction } = detail;
-
-          console.log('User pressed notification', detail.notification);
-          switch (notification.data.type){
-            case "thread":
-              //setScrollToThreadId(notification.data.id)
-              setRouteParams({id: notification.data.id})
-              setRouteName("Talk Details")
-          }
-          break;
-      }
-    });
+    notifee.onBackgroundEvent(async ({type, detail}) =>
+      handleNotificationClick(type, detail),
+    );
+    notifee.onForegroundEvent(async ({type, detail}) =>
+      handleNotificationClick(type, detail),
+    );
   }, []);
 
   function loadLoginDetails() {
@@ -219,16 +217,26 @@ export function App() {
   function setSockets() {
     socket.on('newNotification', async notification => {
       console.log('newNotification', notification);
-      switch (notification.type){
-        case "thread":
-          setNewThread(notification.data);
-          displayNotification(notification.data.title, notification.data.content, 
-        {id: notification.data.id, type: notification.type});
+      switch (notification.type) {
+        case 'thread':
+          setSocketThread(notification.data);
+          await displayNotification(
+            notification.data.title,
+            notification.data.username + ' - ' + notification.data.content,
+            {id: notification.data.id, type: notification.type},
+          );
           break;
-        case "comment":
-          setNewComment(notification.data)
-          displayNotification(notification.data.title, notification.data.content, 
-        {id: notification.data.id, type: notification.type, parentid: notification.data.parentid});
+        case 'comment':
+          setSocketComment(notification.data);
+          await displayNotification(
+            notification.data.title,
+            notification.data.username + ' - ' + notification.data.content,
+            {
+              id: notification.data.rootid,
+              type: notification.type,
+              scrollToId: notification.data.id,
+            },
+          );
           break;
       }
     });
@@ -362,10 +370,10 @@ export function App() {
       ) : (
         <WithSplashScreen isAppReady={isAppReady}>
           <NavigationContainer>
-            <WrappedScrollView 
+            <WrappedScrollView
               contentContainerStyle={{
                 flex: 1,
-                justifyContent: 'space-between'
+                justifyContent: 'space-between',
               }}>
               <Tab.Navigator
                 initialRouteName="About"
@@ -387,10 +395,7 @@ export function App() {
                   <Tab.Screen name="Talk">
                     {() => (
                       <Stack.Navigator>
-                        <Stack.Screen
-                          name="Talk "
-                          children={(props) => <Threads newThread={newThread} {...props} />}
-                        />
+                        <Stack.Screen name="Talk " component={Threads} />
                         <Stack.Screen
                           name="Talk Details"
                           component={ThreadDetails}
@@ -401,23 +406,23 @@ export function App() {
                   <Tab.Screen name="Contact">
                     {() => (
                       <Stack.Navigator>
-                        <Stack.Screen
-                          name="Contact"
-                          component={Contact}
-                        />
-                        <Stack.Screen
-                          name="Meeting"
-                          component={Calendly}
-                        />
+                        <Stack.Screen name="Contact " component={Contact} />
+                        <Stack.Screen name="Meeting" component={Calendly} />
                       </Stack.Navigator>
                     )}
                   </Tab.Screen>
-                  <Tab.Screen 
-                    name="Logout" 
-                    component={ButtonScreen} 
-                    options={({navigation})=> ({
-                              tabBarButton:props => <TouchableOpacity {...props} onPress={()=>handleLogout()} />
-                  })} />
+                  <Tab.Screen
+                    name="Logout"
+                    component={ButtonScreen}
+                    options={({navigation}) => ({
+                      tabBarButton: props => (
+                        <TouchableOpacity
+                          {...props}
+                          onPress={() => handleLogout()}
+                        />
+                      ),
+                    })}
+                  />
                 </Tab.Group>
               </Tab.Navigator>
             </WrappedScrollView>
