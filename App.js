@@ -83,6 +83,7 @@ const Input = styled.TextInput`
   border: 1px solid #ccc;
   padding: 10px;
   margin-bottom: 10px;
+  color: #000000;
 `;
 
 const Button = styled.TouchableOpacity`
@@ -300,7 +301,7 @@ export function App() {
   useEffect(() => {
     setTimeout(() => {
       setIsAppReady(true);
-    }, 100);
+    }, 1000);
   }, []);
 
   return (

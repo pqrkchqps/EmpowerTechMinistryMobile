@@ -212,7 +212,7 @@ const ThreadDetails = () => {
     if (!diablePostReply) {
       const comment = {
         content: replyingTo !== null ? newReply : newComment,
-        rootid: rootThread.id,
+        rootid: threadId,
         parentid: replyingTo !== null ? replyingTo : -1,
       };
       if (comment.content.trim() === '') {
