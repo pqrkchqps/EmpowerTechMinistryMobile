@@ -14,10 +14,12 @@ import {
   TouchableOpacity,
   TextInput,
   FlatList,
+  Alert,
 } from 'react-native';
 import {AvoidSoftInput, AvoidSoftInputView} from 'react-native-avoid-softinput';
 import {CommentContext} from './CommentContext';
 import {ThreadContext} from './ThreadContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import styled from 'styled-components/native';
 import axios from 'axios';
@@ -116,6 +118,14 @@ const BackButton = styled.TouchableOpacity`
 
 // ThreadDetails Component
 const ThreadDetails = () => {
+  const [userId, setUserId] = useState();
+
+  useEffect(() => {
+    AsyncStorage.getItem('userId', userId).then(value => {
+      setUserId(value);
+    });
+  }, []);
+
   const {socketComment, scrollToId, setScrollToId} = useContext(CommentContext);
   const {threadId} = useContext(ThreadContext);
   const scrollFromRef = useRef(null);
@@ -154,7 +164,8 @@ const ThreadDetails = () => {
   const [newReply, setNewReply] = useState('');
   const [rootThread, setRootThread] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
-  const [diablePostReply, setDiablePostReply] = useState(false);
+  const [isDisabledPostReply, setIsDisabledPostReply] = useState(false);
+  const [isDisabledDeleteComment, setIsDisabledDeleteComment] = useState(false);
 
   function addCommentToRootThread(newComment) {
     if (rootThread) {
@@ -169,6 +180,33 @@ const ThreadDetails = () => {
           if (currentComment) {
             if (currentComment.id == newComment.parentid) {
               currentComment.children.push(newComment);
+              break;
+            } else {
+              currentComment.children.map(comment => {
+                queue.push(comment);
+              });
+            }
+          }
+        }
+      }
+      let newRootThread = JSON.parse(JSON.stringify(rootThread));
+      setRootThread(newRootThread);
+    }
+  }
+
+  function deleteCommentToRootThread(comment) {
+    if (rootThread) {
+      if (newComment.parentid == -1) {
+        rootThread.children.push(newComment);
+      } else {
+        let chs = rootThread.children;
+        console.log('chs', chs);
+        let queue = [...rootThread.children];
+        while (queue.length > 0) {
+          let currentComment = queue.shift();
+          if (currentComment) {
+            if (currentComment.id == comment.id) {
+              currentComment.content = 'deleted';
               break;
             } else {
               currentComment.children.map(comment => {
@@ -209,7 +247,7 @@ const ThreadDetails = () => {
   useFocusEffect(onFocusEffect);
 
   const handleAddComment = async () => {
-    if (!diablePostReply) {
+    if (!isDisabledPostReply) {
       const comment = {
         content: replyingTo !== null ? newReply : newComment,
         rootid: threadId,
@@ -218,14 +256,53 @@ const ThreadDetails = () => {
       if (comment.content.trim() === '') {
         return;
       }
-      setDiablePostReply(true);
+      setIsDisabledPostReply(true);
       await axios.post(API_URL + '/api/comment/thread', comment);
-      setDiablePostReply(false);
+      setIsDisabledPostReply(false);
 
       setReplyingTo(null);
 
       setNewComment('');
       setNewReply('');
+    }
+  };
+
+  const handleDeleteComment = async comment => {
+    console.log('comment');
+    console.log(comment);
+    if (!isDisabledDeleteComment) {
+      setIsDisabledDeleteComment(true);
+      Alert.alert(
+        'Delete?',
+        'Are you sure you want to delete the comment that contains "' +
+          comment.content.substring(0, 15) +
+          '"?',
+        [
+          {
+            text: 'Cancel',
+            onPress: () => console.log('Cancel Pressed'),
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            onPress: () => {
+              axios
+                .delete(API_URL + '/api/comment/thread/' + comment.id)
+                .then(res => {
+                  deleteCommentToRootThread(comment);
+                  console.log('Comment ' + comment.id + ' deleted');
+                })
+                .catch(e => {
+                  console.log(
+                    'Comment ' + comment.id + ' has error ' + e.message,
+                  );
+                });
+            },
+            style: 'cancel',
+          },
+        ],
+      );
+      setIsDisabledDeleteComment(false);
     }
   };
 
@@ -247,13 +324,22 @@ const ThreadDetails = () => {
             value={newReply}
             onChangeText={text => setNewReply(text)}
           />
-          <CommentButton disabled={diablePostReply} onPress={handleAddComment}>
+          <CommentButton
+            disabled={isDisabledPostReply}
+            onPress={handleAddComment}>
             <CommentButtonText>Post Reply</CommentButtonText>
           </CommentButton>
         </CommentForm>
       ) : (
         <CommentButton onPress={() => setReplyingTo(item.id)}>
           <CommentButtonText>Reply</CommentButtonText>
+        </CommentButton>
+      )}
+      {item.userid.toString() === userId && item.content !== 'deleted' && (
+        <CommentButton
+          disabled={isDisabledDeleteComment}
+          onPress={() => handleDeleteComment(item)}>
+          <CommentButtonText>Delete</CommentButtonText>
         </CommentButton>
       )}
       {/* Display nested comments (replies) */}

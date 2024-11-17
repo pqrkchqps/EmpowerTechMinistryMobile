@@ -261,7 +261,9 @@ export function App() {
         password,
       });
       const token = response.headers['auth-token'];
+      const userId = response.data.user.id;
       await AsyncStorage.setItem('authToken', token);
+      await AsyncStorage.setItem('userId', userId.toString());
       await Keychain.setGenericPassword(email, password);
       setLoggedIn(true);
     } catch (error) {
