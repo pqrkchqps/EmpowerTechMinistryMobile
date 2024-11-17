@@ -103,7 +103,7 @@ const Threads = ({navigation, scrollToId}) => {
   }, []);
 
   const handleAddThread = async () => {
-    if (newThreadTitle.trim() === '' || newThreadContent.trim() === '') {
+    if (newThreadTitle.trim() === '') {
       return;
     }
 
@@ -114,7 +114,6 @@ const Threads = ({navigation, scrollToId}) => {
 
     const response = await axios.post(API_URL + '/api/thread', newThread);
 
-    setThreads([...threads, response.data.thread]);
     setNewThreadTitle('');
     setNewThreadContent('');
   };
