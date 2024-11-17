@@ -162,10 +162,14 @@ const ThreadDetails = () => {
 
   const [newComment, setNewComment] = useState('');
   const [newReply, setNewReply] = useState('');
+  const [editCommentText, setEditCommentText] = useState('');
   const [rootThread, setRootThread] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [editingTo, setEditingTo] = useState(null);
   const [isDisabledPostReply, setIsDisabledPostReply] = useState(false);
   const [isDisabledDeleteComment, setIsDisabledDeleteComment] = useState(false);
+  const [isDisabledEditComment, setIsDisabledEditComment] = useState(false);
+  const [isEditAlreadyUpdated, setIsEditAlreadyUpdated] = useState(false);
 
   function addCommentToRootThread(newComment) {
     if (rootThread) {
@@ -207,6 +211,33 @@ const ThreadDetails = () => {
           if (currentComment) {
             if (currentComment.id == comment.id) {
               currentComment.content = 'deleted';
+              break;
+            } else {
+              currentComment.children.map(comment => {
+                queue.push(comment);
+              });
+            }
+          }
+        }
+      }
+      let newRootThread = JSON.parse(JSON.stringify(rootThread));
+      setRootThread(newRootThread);
+    }
+  }
+
+  function updateCommentToRootThread(comment) {
+    if (rootThread) {
+      if (newComment.parentid == -1) {
+        rootThread.children.push(newComment);
+      } else {
+        let chs = rootThread.children;
+        console.log('chs', chs);
+        let queue = [...rootThread.children];
+        while (queue.length > 0) {
+          let currentComment = queue.shift();
+          if (currentComment) {
+            if (currentComment.id == comment.id) {
+              currentComment.content = comment.content;
               break;
             } else {
               currentComment.children.map(comment => {
@@ -267,6 +298,47 @@ const ThreadDetails = () => {
     }
   };
 
+  const handleCancelReply = async () => {
+    if (!isDisabledPostReply) {
+      setReplyingTo(null);
+
+      setNewComment('');
+      setNewReply('');
+    }
+  };
+
+  const handleSubmitEditComment = async () => {
+    if (!isDisabledEditComment) {
+      const comment = {
+        content: editCommentText,
+        id: editingTo,
+      };
+      if (comment.content.trim() === '') {
+        return;
+      }
+      setIsDisabledEditComment(true);
+      await axios.patch(API_URL + '/api/comment/thread/' + editingTo, comment);
+      updateCommentToRootThread(comment);
+      setIsDisabledEditComment(false);
+
+      setEditingTo(null);
+
+      setEditCommentText('');
+
+      setIsEditAlreadyUpdated(false);
+    }
+  };
+
+  const handleCancelEditComment = async () => {
+    if (!isDisabledEditComment) {
+      setEditingTo(null);
+
+      setEditCommentText('');
+
+      setIsEditAlreadyUpdated(false);
+    }
+  };
+
   const handleDeleteComment = async comment => {
     console.log('comment');
     console.log(comment);
@@ -306,6 +378,14 @@ const ThreadDetails = () => {
     }
   };
 
+  function setOnceEditCommentText(text) {
+    if (!isEditAlreadyUpdated) {
+      setEditCommentText(text);
+      setIsEditAlreadyUpdated(true);
+    }
+    return true;
+  }
+
   const renderItem = item => (
     <CommentContainer
       ref={scrollToId == item.id ? scrollToRef : null}
@@ -316,7 +396,19 @@ const ThreadDetails = () => {
           {item.month}/{item.day}/{item.year}
         </CommentDateDetails>
       </HeadingContainer>
-      <CommentText>{item.content}</CommentText>
+      <CommentText>
+        {editingTo === item.id && setOnceEditCommentText(item.content) ? (
+          <CommentForm>
+            <NewCommentInput
+              placeholder="Edit this comment"
+              value={editCommentText}
+              onChangeText={text => setEditCommentText(text)}
+            />
+          </CommentForm>
+        ) : (
+          item.content
+        )}
+      </CommentText>
       {replyingTo === item.id ? (
         <CommentForm>
           <NewCommentInput
@@ -329,11 +421,38 @@ const ThreadDetails = () => {
             onPress={handleAddComment}>
             <CommentButtonText>Post Reply</CommentButtonText>
           </CommentButton>
+          <CommentButton
+            disabled={isDisabledPostReply}
+            onPress={handleCancelReply}>
+            <CommentButtonText>Cancel Reply</CommentButtonText>
+          </CommentButton>
         </CommentForm>
       ) : (
         <CommentButton onPress={() => setReplyingTo(item.id)}>
           <CommentButtonText>Reply</CommentButtonText>
         </CommentButton>
+      )}
+      {item.userid.toString() === userId && (
+        <>
+          {editingTo === item.id ? (
+            <>
+              <CommentButton
+                disabled={isDisabledEditComment}
+                onPress={handleSubmitEditComment}>
+                <CommentButtonText>Submit Edit</CommentButtonText>
+              </CommentButton>
+              <CommentButton
+                disabled={isDisabledEditComment}
+                onPress={handleCancelEditComment}>
+                <CommentButtonText>Cancel Edit</CommentButtonText>
+              </CommentButton>
+            </>
+          ) : (
+            <CommentButton onPress={() => setEditingTo(item.id)}>
+              <CommentButtonText>Edit</CommentButtonText>
+            </CommentButton>
+          )}
+        </>
       )}
       {item.userid.toString() === userId && item.content !== 'deleted' && (
         <CommentButton
