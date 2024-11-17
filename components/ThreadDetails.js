@@ -170,6 +170,9 @@ const ThreadDetails = () => {
   const [isDisabledDeleteComment, setIsDisabledDeleteComment] = useState(false);
   const [isDisabledEditComment, setIsDisabledEditComment] = useState(false);
   const [isEditAlreadyUpdated, setIsEditAlreadyUpdated] = useState(false);
+  const [isEditTitleAlreadyUpdated, setIsEditTitleAlreadyUpdated] =
+    useState(false);
+  const [editThreadTitle, setEditThreadTitle] = useState(false);
 
   function addCommentToRootThread(newComment) {
     if (rootThread) {
@@ -252,6 +255,15 @@ const ThreadDetails = () => {
     }
   }
 
+  function updateRootThread(thread) {
+    if (rootThread) {
+      rootThread.title = editThreadTitle;
+      rootThread.content = editCommentText;
+      let newRootThread = JSON.parse(JSON.stringify(rootThread));
+      setRootThread(newRootThread);
+    }
+  }
+
   useEffect(() => {
     if (threadId) {
       const promise = axios.get(API_URL + '/api/thread/' + threadId);
@@ -329,13 +341,40 @@ const ThreadDetails = () => {
     }
   };
 
+  const handleSubmitEditThread = async () => {
+    if (!isDisabledEditComment) {
+      const thread = {
+        title: editThreadTitle,
+        content: editCommentText,
+        id: rootThread.id,
+      };
+      if (thread.title.trim() === '') {
+        return;
+      }
+      setIsDisabledEditComment(true);
+      await axios.patch(API_URL + '/api/thread/' + rootThread.id, thread);
+      updateRootThread(thread);
+      setIsDisabledEditComment(false);
+
+      setEditingTo(null);
+
+      setEditCommentText('');
+      setEditThreadTitle('');
+
+      setIsEditAlreadyUpdated(false);
+      setIsEditTitleAlreadyUpdated(false);
+    }
+  };
+
   const handleCancelEditComment = async () => {
     if (!isDisabledEditComment) {
       setEditingTo(null);
 
       setEditCommentText('');
+      setEditThreadTitle('');
 
       setIsEditAlreadyUpdated(false);
+      setIsEditTitleAlreadyUpdated(false);
     }
   };
 
@@ -382,6 +421,14 @@ const ThreadDetails = () => {
     if (!isEditAlreadyUpdated) {
       setEditCommentText(text);
       setIsEditAlreadyUpdated(true);
+    }
+    return true;
+  }
+
+  function setOnceEdiThreadTitle(text) {
+    if (!isEditTitleAlreadyUpdated) {
+      setEditThreadTitle(text);
+      setIsEditTitleAlreadyUpdated(true);
     }
     return true;
   }
@@ -471,7 +518,21 @@ const ThreadDetails = () => {
       <AvoidSoftInputView>
         {/* Display thread comments */}
         <ScrollView ref={scrollFromRef}>
-          <ThreadTitle>{rootThread && rootThread.title}</ThreadTitle>
+          <ThreadTitle>
+            {editingTo === -1 &&
+            rootThread &&
+            setOnceEdiThreadTitle(rootThread.title) ? (
+              <CommentForm>
+                <NewCommentInput
+                  placeholder="Edit this comment"
+                  value={editThreadTitle}
+                  onChangeText={text => setEditThreadTitle(text)}
+                />
+              </CommentForm>
+            ) : (
+              rootThread && rootThread.title
+            )}
+          </ThreadTitle>
           <HeadingContainer>
             <ThreadAuthorDetails>
               {rootThread && rootThread.username}
@@ -482,7 +543,43 @@ const ThreadDetails = () => {
               {rootThread && rootThread.year}
             </ThreadDateDetails>
           </HeadingContainer>
-          <ThreadContent>{rootThread && rootThread.content}</ThreadContent>
+          <ThreadContent>
+            {editingTo === -1 &&
+            rootThread &&
+            setOnceEditCommentText(rootThread.content) ? (
+              <CommentForm>
+                <NewCommentInput
+                  placeholder="Edit this comment"
+                  value={editCommentText}
+                  onChangeText={text => setEditCommentText(text)}
+                />
+              </CommentForm>
+            ) : (
+              rootThread && rootThread.content
+            )}
+          </ThreadContent>
+          {rootThread && rootThread.userid.toString() === userId && (
+            <>
+              {editingTo === -1 ? (
+                <>
+                  <CommentButton
+                    disabled={isDisabledEditComment}
+                    onPress={handleSubmitEditThread}>
+                    <CommentButtonText>Submit Edit</CommentButtonText>
+                  </CommentButton>
+                  <CommentButton
+                    disabled={isDisabledEditComment}
+                    onPress={handleCancelEditComment}>
+                    <CommentButtonText>Cancel Edit</CommentButtonText>
+                  </CommentButton>
+                </>
+              ) : (
+                <CommentButton onPress={() => setEditingTo(-1)}>
+                  <CommentButtonText>Edit</CommentButtonText>
+                </CommentButton>
+              )}
+            </>
+          )}
           {rootThread &&
             rootThread.children.map(comment => renderItem(comment))}
           <CommentForm>
