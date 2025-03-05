@@ -456,60 +456,65 @@ const ThreadDetails = () => {
           item.content
         )}
       </CommentText>
-      {replyingTo === item.id ? (
-        <CommentForm>
-          <NewCommentInput
-            placeholder="Reply to this comment"
-            value={newReply}
-            onChangeText={text => setNewReply(text)}
-          />
-          <CommentButton
-            disabled={isDisabledPostReply}
-            onPress={handleAddComment}>
-            <CommentButtonText>Post Reply</CommentButtonText>
-          </CommentButton>
-          <CommentButton
-            disabled={isDisabledPostReply}
-            onPress={handleCancelReply}>
-            <CommentButtonText>Cancel Reply</CommentButtonText>
-          </CommentButton>
-        </CommentForm>
-      ) : (
+      {!editingTo && (
         <>
-          <CommentButton onPress={() => setReplyingTo(item.id)}>
-            <CommentButtonText>Reply</CommentButtonText>
-          </CommentButton>
-          {item.userid.toString() === userId && (
-            <>
-              {editingTo === item.id ? (
-                <>
-                  <CommentButton
-                    disabled={isDisabledEditComment}
-                    onPress={handleSubmitEditComment}>
-                    <CommentButtonText>Submit Edit</CommentButtonText>
-                  </CommentButton>
-                  <CommentButton
-                    disabled={isDisabledEditComment}
-                    onPress={handleCancelEditComment}>
-                    <CommentButtonText>Cancel Edit</CommentButtonText>
-                  </CommentButton>
-                </>
-              ) : (
-                <CommentButton onPress={() => setEditingTo(item.id)}>
-                  <CommentButtonText>Edit</CommentButtonText>
-                </CommentButton>
-              )}
-            </>
-          )}
-          {item.userid.toString() === userId && item.content !== 'deleted' && (
-            <CommentButton
-              disabled={isDisabledDeleteComment}
-              onPress={() => handleDeleteComment(item)}>
-              <CommentButtonText>Delete</CommentButtonText>
+          {replyingTo === item.id ? (
+            <CommentForm>
+              <NewCommentInput
+                placeholder="Reply to this comment"
+                value={newReply}
+                onChangeText={text => setNewReply(text)}
+              />
+              <CommentButton
+                disabled={isDisabledPostReply}
+                onPress={handleAddComment}>
+                <CommentButtonText>Post Reply</CommentButtonText>
+              </CommentButton>
+              <CommentButton
+                disabled={isDisabledPostReply}
+                onPress={handleCancelReply}>
+                <CommentButtonText>Cancel Reply</CommentButtonText>
+              </CommentButton>
+            </CommentForm>
+          ) : (
+            <CommentButton onPress={() => setReplyingTo(item.id)}>
+              <CommentButtonText>Reply</CommentButtonText>
             </CommentButton>
           )}
         </>
       )}
+      {item.userid.toString() === userId && !replyingTo && (
+        <>
+          {editingTo === item.id ? (
+            <>
+              <CommentButton
+                disabled={isDisabledEditComment}
+                onPress={handleSubmitEditComment}>
+                <CommentButtonText>Submit Edit</CommentButtonText>
+              </CommentButton>
+              <CommentButton
+                disabled={isDisabledEditComment}
+                onPress={handleCancelEditComment}>
+                <CommentButtonText>Cancel Edit</CommentButtonText>
+              </CommentButton>
+            </>
+          ) : (
+            <CommentButton onPress={() => setEditingTo(item.id)}>
+              <CommentButtonText>Edit</CommentButtonText>
+            </CommentButton>
+          )}
+        </>
+      )}
+      {item.userid.toString() === userId &&
+        !editingTo &&
+        !replyingTo &&
+        item.content !== 'deleted' && (
+          <CommentButton
+            disabled={isDisabledDeleteComment}
+            onPress={() => handleDeleteComment(item)}>
+            <CommentButtonText>Delete</CommentButtonText>
+          </CommentButton>
+        )}
       {/* Display nested comments (replies) */}
       {item.children.map(item => renderItem(item))}
     </CommentContainer>
