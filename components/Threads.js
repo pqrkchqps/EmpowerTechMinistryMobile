@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,15 @@ import {
   TextInput,
 } from 'react-native';
 
+import {AvoidSoftInput, AvoidSoftInputView} from 'react-native-avoid-softinput';
+
 import styled from 'styled-components/native';
-import axios from 'axios';
-import Config from 'react-native-config';
+import axios from '../utils/axios';
+import config from '../utils/env';
+const { API_URL } = config;
 import RedirectNavigator from './RedirectNavigator';
 import {ThreadContext} from './ThreadContext';
-
-const {API_URL} = Config;
+import { useFocusEffect } from '@react-navigation/native';
 
 // Styled components
 const Container = styled.View`
@@ -123,9 +125,18 @@ const Threads = ({navigation, scrollToId}) => {
     navigation.navigate('Talk Details');
   };
 
+    const onFocusEffect = useCallback(() => {
+      AvoidSoftInput.setEnabled(true);
+      return () => {
+        AvoidSoftInput.setEnabled(false);
+      };
+    }, []);
+  
+    useFocusEffect(onFocusEffect);
+
   const renderItem = ({item: thread}) => (
     <TouchableOpacity
-      id={thread.id}
+      id={`${thread.id}`}
       onPress={handleClickThread.bind(this, thread.id)}>
       <ThreadItem>
         <ThreadTitle>{thread.title}</ThreadTitle>
@@ -143,8 +154,8 @@ const Threads = ({navigation, scrollToId}) => {
 
   return (
     <Container>
-      <RedirectNavigator />
-      <SafeAreaView style={styles.container}>
+      <AvoidSoftInputView>
+        <RedirectNavigator />
         <FlatList
           ListHeaderComponent={<Title>Threads</Title>}
           data={threads}
@@ -172,7 +183,7 @@ const Threads = ({navigation, scrollToId}) => {
             </NewThreadForm>
           }
         />
-      </SafeAreaView>
+      </AvoidSoftInputView>
     </Container>
   );
 };

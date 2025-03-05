@@ -1,4 +1,7 @@
 {
   "name": "EmpowerTechMinistry",
-  "displayName": "Empower Tech Ministry"
+  "displayName": "Empower Tech Ministry",
+  "android": {
+    "package": "com.empowertechministry"
+  }
 }

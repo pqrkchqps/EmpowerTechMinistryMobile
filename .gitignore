@@ -67,3 +67,14 @@ yarn-error.log
 /coverage
 
 .env
+env.js
+utils/env.js
+
+*.hmap
+*.ipa
+*.xcuserstate
+**/.xcode.env.local
+# Expo
+.expo
+dist/
+web-build/

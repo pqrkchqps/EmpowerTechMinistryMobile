@@ -22,10 +22,10 @@ import {ThreadContext} from './ThreadContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import styled from 'styled-components/native';
-import axios from 'axios';
-import Config from 'react-native-config';
+import axios from '../utils/axios';
+import config from '../utils/env';
+const {API_URL} = config;
 import {useFocusEffect} from '@react-navigation/native';
-const {API_URL} = Config;
 
 // Styled components
 const Container = styled.View`
@@ -281,9 +281,9 @@ const ThreadDetails = () => {
   }, [socketComment]);
 
   const onFocusEffect = useCallback(() => {
-    AvoidSoftInput.setShouldMimicIOSBehavior(true);
+    AvoidSoftInput.setEnabled(true);
     return () => {
-      AvoidSoftInput.setShouldMimicIOSBehavior(false);
+      AvoidSoftInput.setEnabled(false);
     };
   }, []);
 
@@ -475,38 +475,40 @@ const ThreadDetails = () => {
           </CommentButton>
         </CommentForm>
       ) : (
-        <CommentButton onPress={() => setReplyingTo(item.id)}>
-          <CommentButtonText>Reply</CommentButtonText>
-        </CommentButton>
-      )}
-      {item.userid.toString() === userId && (
         <>
-          {editingTo === item.id ? (
+          <CommentButton onPress={() => setReplyingTo(item.id)}>
+            <CommentButtonText>Reply</CommentButtonText>
+          </CommentButton>
+          {item.userid.toString() === userId && (
             <>
-              <CommentButton
-                disabled={isDisabledEditComment}
-                onPress={handleSubmitEditComment}>
-                <CommentButtonText>Submit Edit</CommentButtonText>
-              </CommentButton>
-              <CommentButton
-                disabled={isDisabledEditComment}
-                onPress={handleCancelEditComment}>
-                <CommentButtonText>Cancel Edit</CommentButtonText>
-              </CommentButton>
+              {editingTo === item.id ? (
+                <>
+                  <CommentButton
+                    disabled={isDisabledEditComment}
+                    onPress={handleSubmitEditComment}>
+                    <CommentButtonText>Submit Edit</CommentButtonText>
+                  </CommentButton>
+                  <CommentButton
+                    disabled={isDisabledEditComment}
+                    onPress={handleCancelEditComment}>
+                    <CommentButtonText>Cancel Edit</CommentButtonText>
+                  </CommentButton>
+                </>
+              ) : (
+                <CommentButton onPress={() => setEditingTo(item.id)}>
+                  <CommentButtonText>Edit</CommentButtonText>
+                </CommentButton>
+              )}
             </>
-          ) : (
-            <CommentButton onPress={() => setEditingTo(item.id)}>
-              <CommentButtonText>Edit</CommentButtonText>
+          )}
+          {item.userid.toString() === userId && item.content !== 'deleted' && (
+            <CommentButton
+              disabled={isDisabledDeleteComment}
+              onPress={() => handleDeleteComment(item)}>
+              <CommentButtonText>Delete</CommentButtonText>
             </CommentButton>
           )}
         </>
-      )}
-      {item.userid.toString() === userId && item.content !== 'deleted' && (
-        <CommentButton
-          disabled={isDisabledDeleteComment}
-          onPress={() => handleDeleteComment(item)}>
-          <CommentButtonText>Delete</CommentButtonText>
-        </CommentButton>
       )}
       {/* Display nested comments (replies) */}
       {item.children.map(item => renderItem(item))}

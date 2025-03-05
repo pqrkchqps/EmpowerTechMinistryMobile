@@ -7,15 +7,15 @@ import About from './components/About';
 import ButtonScreen from "./components/ButtonScreen"
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import Icon from '@react-native-vector-icons/fontawesome';
 import {WithSplashScreen} from './components/Splash';
 import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
 window.navigator.userAgent = 'react-native';
 import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
-import Config from 'react-native-config';
-const {API_URL, SOCKET_URL} = Config;
+import config from './utils/env';
+const {API_URL, SOCKET_URL} = config;
 import {name as appName} from './app.json';
 
 import {
@@ -29,7 +29,7 @@ import {
   Platform,
 } from 'react-native';
 import styled from 'styled-components/native';
-import axios from 'axios';
+import axios from './utils/axios';
 import {isTemplateSpan} from 'typescript';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { wrapScrollView } from 'react-native-scroll-into-view';
@@ -63,9 +63,7 @@ const ContactInfo = styled.View`
 `;
 
 const ContactItem = styled.View`
-  flex-direction: row;
-  align-items: center;
-  margin-bottom: 10px;
+  margin-top: 10px;
 `;
 
 const ContactIcon = styled.Image`
@@ -108,7 +106,7 @@ const LinkText = styled.Text`
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const WrappedScrollView = wrapScrollView(ScrollView);
+const WrappedContainer = wrapScrollView(Container);
 
 export function App() {
   const [isAppReady, setIsAppReady] = useState(false);
@@ -121,24 +119,6 @@ export function App() {
   const {setRouteName} = useContext(RouteContext);
   const {setSocketComment, setScrollToId} = useContext(CommentContext);
   const {setSocketThread, setThreadId} = useContext(ThreadContext);
-
-  axios.interceptors.request.use(async config => {
-    config.headers['auth-token'] = await AsyncStorage.getItem('authToken');
-    return config;
-  });
-
-  axios.interceptors.response.use(
-    res => {
-      return res;
-    },
-    err => {
-      if (err.response && err.response.status === 401) {
-        setLoggedIn(false);
-        loadLoginDetails();
-      }
-      return Promise.reject(err);
-    },
-  );
 
   async function displayNotification(title, body, data) {
     try {
@@ -270,6 +250,21 @@ export function App() {
       console.log('Error while saving authentication token:', error);
     }
   };
+  
+  const handleSendPasswordReset = async () => {
+    // Implement login functionality here
+    // For demonstration, we'll assume successful login and store the token
+    try {
+      console.log(config)
+      console.log(API_URL)
+      const response = await axios.post(API_URL + '/api/auth/link', {
+        email
+      });
+      console.log("posted to link")
+    } catch (error) {
+      console.log('Error while posting to /api/auth/link:', error);
+    }
+  };
 
   const handleRegister = async () => {
     try {
@@ -360,20 +355,33 @@ export function App() {
               <Button onPress={handleLogin}>
                 <ButtonText>Login</ButtonText>
               </Button>
-              <Text>
-                Don't have an account yet?
-                <LinkText onPress={() => setIsRegisterOpen(true)}>
-                  {' '}
-                  Register
-                </LinkText>
-              </Text>
+              
+              <ContactItem>
+                <Text>
+                  Forgot Your Password
+                  <LinkText onPress={handleSendPasswordReset}>
+                    {' '}
+                    Send Password Reset Link
+                  </LinkText>
+                </Text>
+              </ContactItem>
+
+              <ContactItem>
+                <Text>
+                  Don't have an account yet?
+                  <LinkText onPress={() => setIsRegisterOpen(true)}>
+                    {' '}
+                    Register
+                  </LinkText>
+                </Text>
+              </ContactItem>
             </>
           )}
         </InnerContainer>
       ) : (
         <WithSplashScreen isAppReady={isAppReady}>
           <NavigationContainer>
-            <WrappedScrollView
+            <WrappedContainer
               contentContainerStyle={{
                 flex: 1,
                 justifyContent: 'space-between',
@@ -383,7 +391,7 @@ export function App() {
                 screenOptions={({route}) => ({
                   tabBarIcon: ({focused, color, size}) => {
                     let iconName;
-                    iconName = focused ? 'rocket' : 'circle';
+                    iconName = focused ? 'rocket' : 'circle'
                     return <Icon name={iconName} size={size} color={color} />;
                   },
                   tabBarActiveTintColor: 'tomato',
@@ -428,7 +436,7 @@ export function App() {
                   />
                 </Tab.Group>
               </Tab.Navigator>
-            </WrappedScrollView>
+            </WrappedContainer>
           </NavigationContainer>
         </WithSplashScreen>
       )}
