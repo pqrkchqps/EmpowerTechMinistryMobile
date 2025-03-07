@@ -1,5 +1,21 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Animated, StyleSheet} from 'react-native';
+import {StyleSheet, Image, View} from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  Easing,
+} from 'react-native-reanimated';
+import Video from 'react-native-video';
+import rocketTakeOff from '../images/rocket_takeoff.mp4';
+
+import {Dimensions} from 'react-native';
+
+const window = Dimensions.get('window');
+const parentHeight =
+  window.height > window.width ? window.height : window.width;
 
 export function WithSplashScreen({children, isAppReady}) {
   return (
@@ -18,70 +34,79 @@ const FADE_OUT = 'Fade out';
 const HIDDEN = 'Hidden';
 
 export const Splash = ({isAppReady, children}) => {
-  const containerOpacity = useRef(new Animated.Value(1)).current;
-  const imageOpacity = useRef(new Animated.Value(0)).current;
-
+  const position = useSharedValue(-9 * parentHeight);
+  const opacity = useSharedValue(1);
+  const opacityRocket = useSharedValue(1);
   const [state, setState] = useState(LOADING_IMAGE);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{translateY: position.value}],
+      opacity: opacity.value,
+    };
+  });
+
+  const fadeInStyle = useAnimatedStyle(() => {
+    return {
+      opacity: opacityRocket.value,
+    };
+  });
 
   useEffect(() => {
     if (state === FADE_IN_IMAGE) {
-      Animated.timing(imageOpacity, {
-        toValue: 1,
-        duration: 3000, // Fade in duration
-        useNativeDriver: true,
-      }).start(() => {
-        setState(WAIT_FOR_APP_TO_BE_READY);
+      position.value = withTiming(9 * parentHeight, {
+        duration: 4100,
+        easing: Easing.in(Easing.cubic),
+      });
+      opacityRocket.value = withTiming(1, {
+        duration: 1000,
+        easing: Easing.in(Easing.cubic),
+      });
+      opacity.value = withTiming(1, {duration: 1000}, () => {
+        runOnJS(setState)(WAIT_FOR_APP_TO_BE_READY);
       });
     }
-  }, [imageOpacity, state]);
+  }, [state]);
 
   useEffect(() => {
     if (state === WAIT_FOR_APP_TO_BE_READY) {
       if (isAppReady) {
-        setState(FADE_OUT);
+        setTimeout(() => {
+          setState(FADE_OUT);
+        }, 2000);
       }
     }
   }, [isAppReady, state]);
 
   useEffect(() => {
     if (state === FADE_OUT) {
-      Animated.timing(containerOpacity, {
-        toValue: 0,
-        duration: 2000, // Fade out duration
-        delay: 0, // Minimum time the logo will stay visible
-        useNativeDriver: true,
-      }).start(() => {
-        setState(HIDDEN);
+      opacityRocket.value = withTiming(0, {
+        duration: 500,
+        easing: Easing.in(Easing.cubic),
+      });
+      opacity.value = withTiming(0, {duration: 1000}, () => {
+        runOnJS(setState)(HIDDEN);
       });
     }
-  }, [containerOpacity, state]);
+  }, [state]);
 
+  console.log(state);
   if (state === HIDDEN) return <>{children}</>;
 
-  // const backgroundStyle = useAnimatedStyle(() => {
-  //   return {
-  //     transform: [{ translateY: scrollOffset.value }],
-  //     opacity: interpolate(scrollOffset.value, {
-  //       inputRange: [0, 100, 200],
-  //       outputRange: [1, 0.8, 0.5],
-  //     }),
-  //   };
-  // });
-
   return (
-    <Animated.View
-      collapsable={false}
-      style={[style.container, {opacity: containerOpacity}]}>
-      <Animated.Image
-        source={require('../images/more_clouds.png')}
-        fadeDuration={0}
-        onLoad={() => {
-          setState(FADE_IN_IMAGE);
-        }}
-        style={style.image}
-        resizeMode="contain"
-      />
-    </Animated.View>
+    <View style={style.container}>
+      <Animated.View collapsable={false} style={[style.imageContainer]}>
+        <Video
+          source={require('../images/rocket_takeoff.mp4')}
+          style={style.image}
+          paused={false}
+          onLoad={() => {
+            setState(FADE_IN_IMAGE);
+          }}
+          resizeMode="contain"
+        />
+      </Animated.View>
+    </View>
   );
 };
 
@@ -93,7 +118,12 @@ const style = StyleSheet.create({
     justifyContent: 'center',
   },
   image: {
-    width: 250,
-    height: 250,
+    width: '100%',
+    height: '100%',
   },
+  imageRocket: {
+    height: parentHeight,
+    width: parentHeight,
+  },
+  imageContainer: {},
 });
