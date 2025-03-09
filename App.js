@@ -355,7 +355,7 @@ export function App() {
               <Button onPress={handleLogin}>
                 <ButtonText>Login</ButtonText>
               </Button>
-              
+
               <ContactItem>
                 <Text>
                   Forgot Your Password
@@ -391,7 +391,7 @@ export function App() {
                 screenOptions={({route}) => ({
                   tabBarIcon: ({focused, color, size}) => {
                     let iconName;
-                    iconName = focused ? 'rocket' : 'circle'
+                    iconName = focused ? 'rocket' : 'circle';
                     return <Icon name={iconName} size={size} color={color} />;
                   },
                   tabBarActiveTintColor: 'tomato',
@@ -414,14 +414,7 @@ export function App() {
                       </Stack.Navigator>
                     )}
                   </Tab.Screen>
-                  <Tab.Screen name="Contact">
-                    {() => (
-                      <Stack.Navigator>
-                        <Stack.Screen name="Contact " component={Contact} />
-                        <Stack.Screen name="Meeting" component={Calendly} />
-                      </Stack.Navigator>
-                    )}
-                  </Tab.Screen>
+                  <Tab.Screen name="Contact" component={Calendly} />
                   <Tab.Screen
                     name="Logout"
                     component={ButtonScreen}

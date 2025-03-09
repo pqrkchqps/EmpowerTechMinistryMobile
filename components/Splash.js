@@ -20,9 +20,7 @@ const parentHeight =
 export function WithSplashScreen({children, isAppReady}) {
   return (
     <>
-      {isAppReady && children}
-
-      <Splash isAppReady={isAppReady} />
+      <Splash isAppReady={isAppReady} children={children} />
     </>
   );
 }
@@ -35,16 +33,8 @@ const HIDDEN = 'Hidden';
 
 export const Splash = ({isAppReady, children}) => {
   const position = useSharedValue(-9 * parentHeight);
-  const opacity = useSharedValue(1);
-  const opacityRocket = useSharedValue(1);
+  const opacityRocket = useSharedValue(0);
   const [state, setState] = useState(LOADING_IMAGE);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{translateY: position.value}],
-      opacity: opacity.value,
-    };
-  });
 
   const fadeInStyle = useAnimatedStyle(() => {
     return {
@@ -54,17 +44,15 @@ export const Splash = ({isAppReady, children}) => {
 
   useEffect(() => {
     if (state === FADE_IN_IMAGE) {
-      position.value = withTiming(9 * parentHeight, {
-        duration: 4100,
-        easing: Easing.in(Easing.cubic),
-      });
-      opacityRocket.value = withTiming(1, {
-        duration: 1000,
-        easing: Easing.in(Easing.cubic),
-      });
-      opacity.value = withTiming(1, {duration: 1000}, () => {
-        runOnJS(setState)(WAIT_FOR_APP_TO_BE_READY);
-      });
+      opacityRocket.value = withTiming(
+        1,
+        {
+          duration: 500,
+        },
+        () => {
+          runOnJS(setState)(WAIT_FOR_APP_TO_BE_READY);
+        },
+      );
     }
   }, [state]);
 
@@ -73,20 +61,23 @@ export const Splash = ({isAppReady, children}) => {
       if (isAppReady) {
         setTimeout(() => {
           setState(FADE_OUT);
-        }, 2000);
+        }, 2500);
       }
     }
   }, [isAppReady, state]);
 
   useEffect(() => {
     if (state === FADE_OUT) {
-      opacityRocket.value = withTiming(0, {
-        duration: 500,
-        easing: Easing.in(Easing.cubic),
-      });
-      opacity.value = withTiming(0, {duration: 1000}, () => {
-        runOnJS(setState)(HIDDEN);
-      });
+      opacityRocket.value = withTiming(
+        0,
+        {
+          duration: 500,
+          easing: Easing.in(Easing.cubic),
+        },
+        () => {
+          runOnJS(setState)(HIDDEN);
+        },
+      );
     }
   }, [state]);
 
@@ -95,7 +86,9 @@ export const Splash = ({isAppReady, children}) => {
 
   return (
     <View style={style.container}>
-      <Animated.View collapsable={false} style={[style.imageContainer]}>
+      <Animated.View
+        collapsable={false}
+        style={[style.imageContainer, fadeInStyle]}>
         <Video
           source={require('../images/rocket_takeoff.mp4')}
           style={style.image}
@@ -125,5 +118,8 @@ const style = StyleSheet.create({
     height: parentHeight,
     width: parentHeight,
   },
-  imageContainer: {},
+  imageContainer: {
+    height: parentHeight,
+    width: parentHeight,
+  },
 });

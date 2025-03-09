@@ -21,17 +21,17 @@ const Calendly = ({navigation, route}) => {
     };
 
     return (
-        <>
-            <RedirectNavigator/>
-            <WebView
-                scalesPageToFit={true}
-                bounces={false}
-                javaScriptEnabled
-                style={{height: height, width: width*scale*1.3}}
-                source={calendly}
-                automaticallyAdjustContentInsets={false}
-            />
-        </>
+      <>
+        <RedirectNavigator />
+        <WebView
+          scalesPageToFit={true}
+          bounces={false}
+          javaScriptEnabled
+          style={{height: height, width: width * scale * 0.9}}
+          source={calendly}
+          automaticallyAdjustContentInsets={false}
+        />
+      </>
     );
 };
 
