@@ -61,7 +61,7 @@ export const Splash = ({isAppReady, children}) => {
       if (isAppReady) {
         setTimeout(() => {
           setState(FADE_OUT);
-        }, 2500);
+        }, 4000);
       }
     }
   }, [isAppReady, state]);

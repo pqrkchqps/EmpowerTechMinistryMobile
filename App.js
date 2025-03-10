@@ -387,6 +387,7 @@ export function App() {
                 justifyContent: 'space-between',
               }}>
               <Tab.Navigator
+                lazy={false}
                 initialRouteName="About"
                 screenOptions={({route}) => ({
                   tabBarIcon: ({focused, color, size}) => {
@@ -396,6 +397,7 @@ export function App() {
                   },
                   tabBarActiveTintColor: 'tomato',
                   tabBarInactiveTintColor: 'gray',
+                  lazy: false,
                 })}>
                 <Tab.Group
                   screenOptions={{
