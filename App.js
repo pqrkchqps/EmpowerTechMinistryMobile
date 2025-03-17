@@ -1,9 +1,9 @@
 import React, {useState, useEffect} from 'react';
 import Threads from './components/Threads';
 import ThreadDetails from './components/ThreadDetails';
-import Contact from './components/Contact';
+//import Contact from './components/Contact';
 import Calendly from './components/Calendly';
-import About from './components/About';
+import Articles from './components/Articles';
 import ButtonScreen from "./components/ButtonScreen"
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -388,7 +388,7 @@ export function App() {
               }}>
               <Tab.Navigator
                 lazy={false}
-                initialRouteName="About"
+                initialRouteName="Articles"
                 screenOptions={({route}) => ({
                   tabBarIcon: ({focused, color, size}) => {
                     let iconName;
@@ -404,7 +404,7 @@ export function App() {
                     headerShown: false,
                     handleLogout,
                   }}>
-                  <Tab.Screen name="About" component={About} />
+                  <Tab.Screen name="Articles" component={Articles} />
                   <Tab.Screen name="Talk">
                     {() => (
                       <Stack.Navigator>
