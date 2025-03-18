@@ -15,10 +15,11 @@ import {
   TextInput,
   FlatList,
   Alert,
+  Image,
 } from 'react-native';
 import {AvoidSoftInput, AvoidSoftInputView} from 'react-native-avoid-softinput';
 import {CommentContext} from './CommentContext';
-import {ThreadContext} from './ThreadContext';
+import {ArticleContext} from './ArticleContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import styled from 'styled-components/native';
@@ -35,26 +36,41 @@ const Container = styled.View`
   padding: 20px;
 `;
 
-const ThreadTitle = styled.Text`
+const ArticleTitle = styled.Text`
   font-size: 24px;
   font-weight: bold;
   color: #333;
   margin-bottom: 10px;
 `;
 
-const ThreadContent = styled.Text`
+const SectionTitle = styled.Text`
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-top: ${props => (props.index > 0 ? '40px' : '5px')};
+  margin-bottom: 10px;
+`;
+
+const SectionParagraph = styled.Text`
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 10px;
+`;
+
+const ArticleContent = styled.Text`
   font-size: 16px;
   color: #666;
   margin: 5px;
 `;
 
-const ThreadAuthorDetails = styled.Text`
+const ArticleAuthorDetails = styled.Text`
   font-size: 16px;
   color: #700;
   margin: 5px;
+  margin-right: 30px;
 `;
 
-const ThreadDateDetails = styled.Text`
+const ArticleDateDetails = styled.Text`
   font-size: 16px;
   color: #888;
   margin: 5px;
@@ -68,6 +84,17 @@ const CommentContainer = styled.View`
 `;
 
 const HeadingContainer = styled.View`
+  display: flex;
+  flex-direction: column;
+`;
+
+const BodyContainer = styled.View`
+  display: flex;
+  flex-direction: column;
+`;
+
+
+const MetaDataContainer = styled.View`
   display: flex;
   flex-direction: row;
 `;
@@ -116,8 +143,8 @@ const BackButton = styled.TouchableOpacity`
   margin-top: 20px;
 `;
 
-// ThreadDetails Component
-const ThreadDetails = () => {
+// ArticleDetails Component
+const ArticleDetails = () => {
   const [userId, setUserId] = useState();
 
   useEffect(() => {
@@ -127,7 +154,7 @@ const ThreadDetails = () => {
   }, []);
 
   const {socketComment, scrollToId, setScrollToId} = useContext(CommentContext);
-  const {threadId} = useContext(ThreadContext);
+  const {articleId} = useContext(ArticleContext);
   const scrollFromRef = useRef(null);
   function useHookWithRefCallback() {
     const ref = useRef(null);
@@ -163,7 +190,7 @@ const ThreadDetails = () => {
   const [newComment, setNewComment] = useState('');
   const [newReply, setNewReply] = useState('');
   const [editCommentText, setEditCommentText] = useState('');
-  const [rootThread, setRootThread] = useState(null);
+  const [rootArticle, setRootArticle] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingTo, setEditingTo] = useState(null);
   const [isDisabledPostReply, setIsDisabledPostReply] = useState(false);
@@ -172,16 +199,16 @@ const ThreadDetails = () => {
   const [isEditAlreadyUpdated, setIsEditAlreadyUpdated] = useState(false);
   const [isEditTitleAlreadyUpdated, setIsEditTitleAlreadyUpdated] =
     useState(false);
-  const [editThreadTitle, setEditThreadTitle] = useState(false);
+  const [editArticleTitle, setEditArticleTitle] = useState(false);
 
-  function addCommentToRootThread(newComment) {
-    if (rootThread) {
+  function addCommentToRootArticle(newComment) {
+    if (rootArticle) {
       if (newComment.parentid == -1) {
-        rootThread.children.push(newComment);
+        rootArticle.children.push(newComment);
       } else {
-        let chs = rootThread.children;
+        let chs = rootArticle.children;
         console.log('chs', chs);
-        let queue = [...rootThread.children];
+        let queue = [...rootArticle.children];
         while (queue.length > 0) {
           let currentComment = queue.shift();
           if (currentComment) {
@@ -196,19 +223,19 @@ const ThreadDetails = () => {
           }
         }
       }
-      let newRootThread = JSON.parse(JSON.stringify(rootThread));
-      setRootThread(newRootThread);
+      let newRootArticle = JSON.parse(JSON.stringify(rootArticle));
+      setRootArticle(newRootArticle);
     }
   }
 
-  function deleteCommentToRootThread(comment) {
-    if (rootThread) {
+  function deleteCommentToRootArticle(comment) {
+    if (rootArticle) {
       if (newComment.parentid == -1) {
-        rootThread.children.push(newComment);
+        rootArticle.children.push(newComment);
       } else {
-        let chs = rootThread.children;
+        let chs = rootArticle.children;
         console.log('chs', chs);
-        let queue = [...rootThread.children];
+        let queue = [...rootArticle.children];
         while (queue.length > 0) {
           let currentComment = queue.shift();
           if (currentComment) {
@@ -223,19 +250,19 @@ const ThreadDetails = () => {
           }
         }
       }
-      let newRootThread = JSON.parse(JSON.stringify(rootThread));
-      setRootThread(newRootThread);
+      let newRootArticle = JSON.parse(JSON.stringify(rootArticle));
+      setRootArticle(newRootArticle);
     }
   }
 
-  function updateCommentToRootThread(comment) {
-    if (rootThread) {
+  function updateCommentToRootArticle(comment) {
+    if (rootArticle) {
       if (newComment.parentid == -1) {
-        rootThread.children.push(newComment);
+        rootArticle.children.push(newComment);
       } else {
-        let chs = rootThread.children;
+        let chs = rootArticle.children;
         console.log('chs', chs);
-        let queue = [...rootThread.children];
+        let queue = [...rootArticle.children];
         while (queue.length > 0) {
           let currentComment = queue.shift();
           if (currentComment) {
@@ -250,33 +277,33 @@ const ThreadDetails = () => {
           }
         }
       }
-      let newRootThread = JSON.parse(JSON.stringify(rootThread));
-      setRootThread(newRootThread);
+      let newRootArticle = JSON.parse(JSON.stringify(rootArticle));
+      setRootArticle(newRootArticle);
     }
   }
 
-  function updateRootThread(thread) {
-    if (rootThread) {
-      rootThread.title = editThreadTitle;
-      rootThread.content = editCommentText;
-      let newRootThread = JSON.parse(JSON.stringify(rootThread));
-      setRootThread(newRootThread);
+  function updateRootArticle(article) {
+    if (rootArticle) {
+      rootArticle.title = editArticleTitle;
+      rootArticle.content = editCommentText;
+      let newRootArticle = JSON.parse(JSON.stringify(rootArticle));
+      setRootArticle(newRootArticle);
     }
   }
 
   useEffect(() => {
-    if (threadId) {
-      const promise = axios.get(API_URL + '/api/thread/' + threadId);
+    if (articleId) {
+      const promise = axios.get(API_URL + '/api/article/' + articleId);
       promise.then(response => {
-        setRootThread(response.data.thread);
+        setRootArticle(response.data.article);
       });
     }
-  }, [threadId]);
+  }, [articleId]);
 
   useEffect(() => {
     console.log('Socket comment', socketComment);
     if (socketComment) {
-      addCommentToRootThread(socketComment);
+      addCommentToRootArticle(socketComment);
     }
   }, [socketComment]);
 
@@ -293,14 +320,14 @@ const ThreadDetails = () => {
     if (!isDisabledPostReply) {
       const comment = {
         content: replyingTo !== null ? newReply : newComment,
-        rootid: threadId,
+        rootid: articleId,
         parentid: replyingTo !== null ? replyingTo : -1,
       };
       if (comment.content.trim() === '') {
         return;
       }
       setIsDisabledPostReply(true);
-      await axios.post(API_URL + '/api/comment/thread', comment);
+      await axios.post(API_URL + '/api/comment/article', comment);
       setIsDisabledPostReply(false);
 
       setReplyingTo(null);
@@ -329,8 +356,8 @@ const ThreadDetails = () => {
         return;
       }
       setIsDisabledEditComment(true);
-      await axios.patch(API_URL + '/api/comment/thread/' + editingTo, comment);
-      updateCommentToRootThread(comment);
+      await axios.patch(API_URL + '/api/comment/article/' + editingTo, comment);
+      updateCommentToRootArticle(comment);
       setIsDisabledEditComment(false);
 
       setEditingTo(null);
@@ -341,25 +368,25 @@ const ThreadDetails = () => {
     }
   };
 
-  const handleSubmitEditThread = async () => {
+  const handleSubmitEditArticle = async () => {
     if (!isDisabledEditComment) {
-      const thread = {
-        title: editThreadTitle,
+      const article = {
+        title: editArticleTitle,
         content: editCommentText,
-        id: rootThread.id,
+        id: rootArticle.id,
       };
-      if (thread.title.trim() === '') {
+      if (article.title.trim() === '') {
         return;
       }
       setIsDisabledEditComment(true);
-      await axios.patch(API_URL + '/api/thread/' + rootThread.id, thread);
-      updateRootThread(thread);
+      await axios.patch(API_URL + '/api/article/' + rootArticle.id, article);
+      updateRootArticle(article);
       setIsDisabledEditComment(false);
 
       setEditingTo(null);
 
       setEditCommentText('');
-      setEditThreadTitle('');
+      setEditArticleTitle('');
 
       setIsEditAlreadyUpdated(false);
       setIsEditTitleAlreadyUpdated(false);
@@ -371,7 +398,7 @@ const ThreadDetails = () => {
       setEditingTo(null);
 
       setEditCommentText('');
-      setEditThreadTitle('');
+      setEditArticleTitle('');
 
       setIsEditAlreadyUpdated(false);
       setIsEditTitleAlreadyUpdated(false);
@@ -398,9 +425,9 @@ const ThreadDetails = () => {
             text: 'Delete',
             onPress: () => {
               axios
-                .delete(API_URL + '/api/comment/thread/' + comment.id)
+                .delete(API_URL + '/api/comment/article/' + comment.id)
                 .then(res => {
-                  deleteCommentToRootThread(comment);
+                  deleteCommentToRootArticle(comment);
                   console.log('Comment ' + comment.id + ' deleted');
                 })
                 .catch(e => {
@@ -427,11 +454,22 @@ const ThreadDetails = () => {
 
   function setOnceEditArticleTitle(text) {
     if (!isEditTitleAlreadyUpdated) {
-      setEditThreadTitle(text);
+      setEditArticleTitle(text);
       setIsEditTitleAlreadyUpdated(true);
     }
     return true;
   }
+
+  const renderParagraph = (paragraph) => (
+    <SectionParagraph>{paragraph}</SectionParagraph>
+  )
+
+  const renderSection = (section, index) => (
+    <>
+      <SectionTitle index={index}>{section.title}</SectionTitle>
+      {section?.paragraphs.map(renderParagraph)}
+    </>
+  )
 
   const renderItem = item => (
     <CommentContainer
@@ -523,37 +561,46 @@ const ThreadDetails = () => {
   return (
     <Container>
       <AvoidSoftInputView>
-        {/* Display thread comments */}
+        {/* Display article comments */}
         <ScrollView ref={scrollFromRef}>
-          <ThreadTitle>
+          <ArticleTitle>
             {editingTo === -1 &&
-            rootThread &&
-            setOnceEditArticleTitle(rootThread.title) ? (
+            rootArticle &&
+            setOnceEditArticleTitle(rootArticle.title) ? (
               <CommentForm>
                 <NewCommentInput
                   placeholder="Edit this title"
-                  value={editThreadTitle}
-                  onChangeText={text => setEditThreadTitle(text)}
+                  value={editArticleTitle}
+                  onChangeText={text => setEditArticleTitle(text)}
                 />
               </CommentForm>
             ) : (
-              rootThread && rootThread.title
+              rootArticle && rootArticle.title
             )}
-          </ThreadTitle>
+          </ArticleTitle>
           <HeadingContainer>
-            <ThreadAuthorDetails>
-              {rootThread && rootThread.username}
-            </ThreadAuthorDetails>
-            <ThreadDateDetails>
-              {rootThread && rootThread.month}/{rootThread && rootThread.day}
-              {'/'}
-              {rootThread && rootThread.year}
-            </ThreadDateDetails>
+            {rootArticle && (
+              <Image 
+                source={{uri: rootArticle.image}} 
+                style={{width: '100%', height: 300}}
+              />
+            )}
+            <MetaDataContainer>
+              <ArticleAuthorDetails>
+                {rootArticle && rootArticle.username}
+              </ArticleAuthorDetails>
+              <ArticleDateDetails>
+                {rootArticle && rootArticle.time}
+              </ArticleDateDetails>
+            </MetaDataContainer>
           </HeadingContainer>
-          <ThreadContent>
+          <BodyContainer>
+            {rootArticle?.sections.map(renderSection)}
+          </BodyContainer>
+          <ArticleContent>
             {editingTo === -1 &&
-            rootThread &&
-            setOnceEditCommentText(rootThread.content) ? (
+            rootArticle &&
+            setOnceEditCommentText(rootArticle.content) ? (
               <CommentForm>
                 <NewCommentInput
                   placeholder="Edit this comment"
@@ -562,16 +609,16 @@ const ThreadDetails = () => {
                 />
               </CommentForm>
             ) : (
-              rootThread && rootThread.content
+              rootArticle && rootArticle.content
             )}
-          </ThreadContent>
-          {rootThread && rootThread.userid.toString() === userId && (
+          </ArticleContent>
+          {rootArticle && rootArticle.userid.toString() === userId && (
             <>
               {editingTo === -1 ? (
                 <>
                   <CommentButton
                     disabled={isDisabledEditComment}
-                    onPress={handleSubmitEditThread}>
+                    onPress={handleSubmitEditArticle}>
                     <CommentButtonText>Submit Edit</CommentButtonText>
                   </CommentButton>
                   <CommentButton
@@ -581,14 +628,12 @@ const ThreadDetails = () => {
                   </CommentButton>
                 </>
               ) : (
-                <CommentButton onPress={() => setEditingTo(-1)}>
-                  <CommentButtonText>Edit</CommentButtonText>
-                </CommentButton>
+                null
               )}
             </>
           )}
-          {rootThread &&
-            rootThread.children.map(comment => renderItem(comment))}
+          {rootArticle &&
+            rootArticle.children.map(comment => renderItem(comment))}
           <CommentForm>
             <NewCommentInput
               placeholder="Write a comment..."
@@ -611,4 +656,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ThreadDetails;
+export default ArticleDetails;

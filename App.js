@@ -4,12 +4,13 @@ import ThreadDetails from './components/ThreadDetails';
 //import Contact from './components/Contact';
 import Calendly from './components/Calendly';
 import Articles from './components/Articles';
-import ButtonScreen from "./components/ButtonScreen"
+import ArticleDetails from './components/ArticleDetails';
+import ButtonScreen from './components/ButtonScreen';
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Icon from '@react-native-vector-icons/fontawesome';
 import {WithSplashScreen} from './components/Splash';
-import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
+import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
 window.navigator.userAgent = 'react-native';
 import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,9 +33,9 @@ import styled from 'styled-components/native';
 import axios from './utils/axios';
 import {isTemplateSpan} from 'typescript';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import { wrapScrollView } from 'react-native-scroll-into-view';
-import {RouteContext, RouteProvider} from "./components/RouteContext"
-import { useContext } from 'react';
+import {wrapScrollView} from 'react-native-scroll-into-view';
+import {RouteContext, RouteProvider} from './components/RouteContext';
+import {useContext} from 'react';
 import {CommentContext} from './components/CommentContext';
 import {ThreadContext} from './components/ThreadContext';
 
@@ -250,17 +251,17 @@ export function App() {
       console.log('Error while saving authentication token:', error);
     }
   };
-  
+
   const handleSendPasswordReset = async () => {
     // Implement login functionality here
     // For demonstration, we'll assume successful login and store the token
     try {
-      console.log(config)
-      console.log(API_URL)
+      console.log(config);
+      console.log(API_URL);
       const response = await axios.post(API_URL + '/api/auth/link', {
-        email
+        email,
       });
-      console.log("posted to link")
+      console.log('posted to link');
     } catch (error) {
       console.log('Error while posting to /api/auth/link:', error);
     }
@@ -404,7 +405,17 @@ export function App() {
                     headerShown: false,
                     handleLogout,
                   }}>
-                  <Tab.Screen name="Articles" component={Articles} />
+                  <Tab.Screen name="Articles">
+                    {() => (
+                      <Stack.Navigator>
+                        <Stack.Screen name="Articles" component={Articles} />
+                        <Stack.Screen
+                          name="Article Details"
+                          component={ArticleDetails}
+                        />
+                      </Stack.Navigator>
+                    )}
+                  </Tab.Screen>
                   <Tab.Screen name="Talk">
                     {() => (
                       <Stack.Navigator>

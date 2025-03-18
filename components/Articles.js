@@ -7,6 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  Image,
 } from 'react-native';
 
 import {AvoidSoftInput, AvoidSoftInputView} from 'react-native-avoid-softinput';
@@ -14,10 +15,10 @@ import {AvoidSoftInput, AvoidSoftInputView} from 'react-native-avoid-softinput';
 import styled from 'styled-components/native';
 import axios from '../utils/axios';
 import config from '../utils/env';
-const { API_URL } = config;
+const {API_URL} = config;
 import RedirectNavigator from './RedirectNavigator';
-//import {ArticleContext} from './ArticleContext';
-import { useFocusEffect } from '@react-navigation/native';
+import {ArticleContext} from './ArticleContext';
+import {useFocusEffect} from '@react-navigation/native';
 
 // Styled components
 const Container = styled.View`
@@ -34,7 +35,7 @@ const Title = styled.Text`
 `;
 
 const ArticleItem = styled.View`
-  margin-bottom: 20px;
+  margin-bottom: 60px;
 `;
 
 const ArticleTitle = styled.Text`
@@ -86,16 +87,16 @@ const NewArticleContent = styled.TextInput`
 
 // Articles Component
 const Articles = ({navigation, scrollToId}) => {
-  //const {socketArticle, setArticleId} = useContext(ArticleContext);
+  const {socketArticle, setArticleId} = useContext(ArticleContext);
   const [articles, setArticles] = useState([]);
   const [newArticleTitle, setNewArticleTitle] = useState('');
   const [newArticleContent, setNewArticleContent] = useState('');
 
-  // useEffect(() => {
-  //   if (socketArticle) {
-  //     setArticles(state => [...state, socketArticle]);
-  //   }
-  // }, [socketArticle]);
+  useEffect(() => {
+    if (socketArticle) {
+      setArticles(state => [...state, socketArticle]);
+    }
+  }, [socketArticle]);
 
   useEffect(() => {
     const promise = axios.get(API_URL + '/api/article');
@@ -121,18 +122,18 @@ const Articles = ({navigation, scrollToId}) => {
   };
 
   const handleClickArticle = async articleId => {
-    //setArticleId(articleId);
-    navigation.navigate('Talk Details');
+    setArticleId(articleId);
+    navigation.navigate('Article Details');
   };
 
-    const onFocusEffect = useCallback(() => {
-      AvoidSoftInput.setEnabled(true);
-      return () => {
-        AvoidSoftInput.setEnabled(false);
-      };
-    }, []);
-  
-    useFocusEffect(onFocusEffect);
+  const onFocusEffect = useCallback(() => {
+    AvoidSoftInput.setEnabled(true);
+    return () => {
+      AvoidSoftInput.setEnabled(false);
+    };
+  }, []);
+
+  useFocusEffect(onFocusEffect);
 
   const renderItem = ({item: article}) => (
     <TouchableOpacity
@@ -142,11 +143,12 @@ const Articles = ({navigation, scrollToId}) => {
         <ArticleTitle>{article.title}</ArticleTitle>
         <HeadingContainer>
           <ArticleAuthorDetails>{article.username}</ArticleAuthorDetails>
-          <ArticleDateDetails>
-            {article.month}/{article.day}/{article.year}
-          </ArticleDateDetails>
+          <ArticleDateDetails>{article.time}</ArticleDateDetails>
         </HeadingContainer>
-        <ArticleContent>{article.content}</ArticleContent>
+        <Image
+          source={{uri: article.image}}
+          style={{width: '100%', height: 200}}
+        />
         {scrollToId == article.id && console.log(article.id)}
       </ArticleItem>
     </TouchableOpacity>
@@ -158,7 +160,7 @@ const Articles = ({navigation, scrollToId}) => {
         <RedirectNavigator />
         <FlatList
           ListHeaderComponent={<Title>Articles</Title>}
-          data={articles}
+          data={articles.reverse()}
           renderItem={renderItem}
           keyExtractor={(item, index) => 'key-' + item.id}
         />
