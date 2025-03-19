@@ -90,7 +90,7 @@ export const Splash = ({isAppReady, children}) => {
         collapsable={false}
         style={[style.imageContainer, fadeInStyle]}>
         <Video
-          source={require('../images/rocket_takeoff.mp4')}
+          source={require('../images/rocket_takeoff2.mp4')}
           style={style.image}
           paused={false}
           onLoad={() => {

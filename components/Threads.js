@@ -157,7 +157,6 @@ const Threads = ({navigation, scrollToId}) => {
       <AvoidSoftInputView>
         <RedirectNavigator />
         <FlatList
-          ListHeaderComponent={<Title>Threads</Title>}
           data={threads}
           renderItem={renderItem}
           keyExtractor={(item, index) => 'key-' + item.id}

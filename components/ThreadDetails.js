@@ -63,8 +63,10 @@ const ThreadDateDetails = styled.Text`
 const CommentContainer = styled.View`
   border: 1px solid #ccc;
   border-right-width: 0px;
-  padding: 10px 0px 10px 10px;
-  margin-bottom: 10px;
+  border-left-width: 0px;
+  border-bottom-width: 0px;
+  padding: 10px 0px 0px 10px;
+  margin-top: 10px;
 `;
 
 const HeadingContainer = styled.View`

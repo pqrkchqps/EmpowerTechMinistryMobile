@@ -35,7 +35,7 @@ const Title = styled.Text`
 `;
 
 const ArticleItem = styled.View`
-  margin-bottom: 60px;
+  margin-bottom: 30px;
 `;
 
 const ArticleTitle = styled.Text`
@@ -141,15 +141,15 @@ const Articles = ({navigation, scrollToId}) => {
       onPress={handleClickArticle.bind(this, article.id)}>
       <ArticleItem>
         <ArticleTitle>{article.title}</ArticleTitle>
-        <HeadingContainer>
-          <ArticleAuthorDetails>{article.username}</ArticleAuthorDetails>
-          <ArticleDateDetails>{article.time}</ArticleDateDetails>
-        </HeadingContainer>
         <Image
           source={{uri: article.image}}
           style={{width: '100%', height: 200}}
         />
         {scrollToId == article.id && console.log(article.id)}
+        <HeadingContainer>
+          <ArticleAuthorDetails>{article.username}</ArticleAuthorDetails>
+          <ArticleDateDetails>{article.time}</ArticleDateDetails>
+        </HeadingContainer>
       </ArticleItem>
     </TouchableOpacity>
   );
@@ -159,8 +159,7 @@ const Articles = ({navigation, scrollToId}) => {
       <AvoidSoftInputView>
         <RedirectNavigator />
         <FlatList
-          ListHeaderComponent={<Title>Articles</Title>}
-          data={articles.reverse()}
+          data={articles}
           renderItem={renderItem}
           keyExtractor={(item, index) => 'key-' + item.id}
         />

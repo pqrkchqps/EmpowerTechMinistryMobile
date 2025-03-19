@@ -118,7 +118,12 @@ export function App() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   const {setRouteName} = useContext(RouteContext);
-  const {setSocketComment, setScrollToId} = useContext(CommentContext);
+  const {setSocketComment: setThreadComment, setScrollToId} =
+    useContext(CommentContext);
+  const {
+    setSocketComment: setArticleComment,
+    setScrollToId: setScrollToIdArticle,
+  } = useContext(CommentContext);
   const {setSocketThread, setThreadId} = useContext(ThreadContext);
 
   async function displayNotification(title, body, data) {
@@ -209,7 +214,10 @@ export function App() {
           );
           break;
         case 'comment':
-          setSocketComment(notification.data);
+          if (notification.type === 'thread')
+            setThreadComment(notification.data);
+          else if (notification.type === 'article')
+            setArticleComment(notification.data);
           await displayNotification(
             notification.data.title,
             notification.data.username + ' - ' + notification.data.content,
