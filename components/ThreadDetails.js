@@ -97,7 +97,9 @@ const CommentForm = styled.View`
   padding-top: 10px;
 `;
 
-const NewCommentInput = styled.TextInput`
+const NewCommentInput = styled.TextInput.attrs({
+  placeholderTextColor: 'gray',
+})`
   font-size: 14px;
   color: #333;
   padding: 8px;

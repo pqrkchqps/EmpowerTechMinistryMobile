@@ -78,7 +78,9 @@ const ContactText = styled.Text`
   color: #555;
 `;
 
-const Input = styled.TextInput`
+const Input = styled.TextInput.attrs({
+  placeholderTextColor: 'gray',
+})`
   border: 1px solid #ccc;
   padding: 10px;
   margin-bottom: 10px;

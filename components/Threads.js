@@ -69,7 +69,9 @@ const NewThreadForm = styled.View`
   padding-top: 10px;
 `;
 
-const NewThreadTitle = styled.TextInput`
+const NewThreadTitle = styled.TextInput.attrs({
+  placeholderTextColor: 'gray',
+})`
   font-size: 18px;
   color: #555;
   padding: 10px;
@@ -77,7 +79,9 @@ const NewThreadTitle = styled.TextInput`
   margin-bottom: 10px;
 `;
 
-const NewThreadContent = styled.TextInput`
+const NewThreadContent = styled.TextInput.attrs({
+  placeholderTextColor: 'gray',
+})`
   color: #666;
   padding: 10px;
   border: 1px solid #ccc;

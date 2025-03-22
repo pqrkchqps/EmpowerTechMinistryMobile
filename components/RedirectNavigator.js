@@ -9,7 +9,10 @@ function RedirectNavigator({children}){
         if (routeName){
             setTimeout(()=>resetRouteVars(), 1000)
             if (routeName == "Talk Details"){
-                navigation.navigate("Talk", {screen: routeName, params: routeParams})
+                navigation.navigate('Talk', {
+                  screen: routeName,
+                  params: routeParams,
+                });
             } else {
                 navigation.navigate(routeName, routeParams)    
             }
