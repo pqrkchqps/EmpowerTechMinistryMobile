@@ -35,6 +35,11 @@ const Title = styled.Text`
 `;
 
 const ArticleItem = styled.View`
+  border: 1px solid #ccc;
+  border-right-width: 0px;
+  border-left-width: 0px;
+  border-top-width: 0px;
+  padding-bottom: 30px;
   margin-bottom: 30px;
 `;
 
@@ -58,9 +63,15 @@ const ArticleDateDetails = styled.Text`
   margin: 5px;
 `;
 
-const HeadingContainer = styled.View`
+const RowContainer = styled.View`
   display: flex;
   flex-direction: row;
+`;
+
+const ColContainer = styled.View`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 `;
 
 const NewArticleForm = styled.View`
@@ -140,16 +151,19 @@ const Articles = ({navigation, scrollToId}) => {
       id={`${article.id}`}
       onPress={handleClickArticle.bind(this, article.id)}>
       <ArticleItem>
-        <ArticleTitle>{article.title}</ArticleTitle>
-        <Image
-          source={{uri: article.image}}
-          style={{width: '100%', height: 200}}
-        />
-        {scrollToId == article.id && console.log(article.id)}
-        <HeadingContainer>
-          <ArticleAuthorDetails>{article.username}</ArticleAuthorDetails>
-          <ArticleDateDetails>{article.time}</ArticleDateDetails>
-        </HeadingContainer>
+        <RowContainer>
+          <ColContainer style={{width: '48%', height: 200, margin: '2%'}}>
+            <ArticleTitle>{article.title}</ArticleTitle>
+            <RowContainer>
+              <ArticleAuthorDetails>{article.username}</ArticleAuthorDetails>
+              <ArticleDateDetails>{article.time}</ArticleDateDetails>
+            </RowContainer>
+          </ColContainer>
+          <Image
+            source={{uri: article.image}}
+            style={{width: '48%', height: 200}}
+          />
+        </RowContainer>
       </ArticleItem>
     </TouchableOpacity>
   );

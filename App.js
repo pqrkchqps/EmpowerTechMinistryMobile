@@ -46,10 +46,24 @@ const Container = styled.View`
   display: flex;
   height: 100%;
   background-color: #ffffff;
+  border-left-width: 2px;
+  border-right-width: 2px;
+  border-color: #010049;
 `;
 
 const InnerContainer = styled.View`
+  background-color: #010049;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
+`;
+
+const LoginContainer = styled.View`
+  height: 400px;
+  background-color: #ffffff;
+  padding: 30px;
 `;
 
 const Title = styled.Text`
@@ -319,7 +333,7 @@ export function App() {
       {!loggedIn ? (
         <InnerContainer>
           {isRegisterOpen ? (
-            <>
+            <LoginContainer>
               <Title>Register for Empower Tech Ministry</Title>
               <Input
                 placeholder="Username"
@@ -348,9 +362,9 @@ export function App() {
                   Login
                 </LinkText>
               </Text>
-            </>
+            </LoginContainer>
           ) : (
-            <>
+            <LoginContainer>
               <Title>Login to Empower Tech Ministry</Title>
               <Input
                 placeholder="Email"
@@ -386,7 +400,7 @@ export function App() {
                   </LinkText>
                 </Text>
               </ContactItem>
-            </>
+            </LoginContainer>
           )}
         </InnerContainer>
       ) : (
@@ -401,13 +415,14 @@ export function App() {
                 lazy={false}
                 initialRouteName="Articles"
                 screenOptions={({route}) => ({
+                  tabBarStyle: {backgroundColor: '#010049', paddingTop: 10},
                   tabBarIcon: ({focused, color, size}) => {
                     let iconName;
                     iconName = focused ? 'rocket' : 'circle';
                     return <Icon name={iconName} size={size} color={color} />;
                   },
                   tabBarActiveTintColor: 'tomato',
-                  tabBarInactiveTintColor: 'gray',
+                  tabBarInactiveTintColor: 'white',
                   lazy: false,
                 })}>
                 <Tab.Group
@@ -415,13 +430,22 @@ export function App() {
                     headerShown: false,
                     handleLogout,
                   }}>
-                  <Tab.Screen name="Articles">
+                  <Tab.Screen
+                    name="Articles"
+                    options={{
+                      headerTitle: () => null,
+                    }}>
                     {() => (
                       <Stack.Navigator>
-                        <Stack.Screen name="Articles" component={Articles} />
+                        <Stack.Screen
+                          name="Articles"
+                          component={Articles}
+                          options={NavScreenOptions}
+                        />
                         <Stack.Screen
                           name="Article Details"
                           component={ArticleDetails}
+                          options={NavScreenOptions}
                         />
                       </Stack.Navigator>
                     )}
@@ -429,15 +453,24 @@ export function App() {
                   <Tab.Screen name="Talk">
                     {() => (
                       <Stack.Navigator>
-                        <Stack.Screen name="Talk " component={Threads} />
+                        <Stack.Screen
+                          name="Talk "
+                          component={Threads}
+                          options={NavScreenOptions}
+                        />
                         <Stack.Screen
                           name="Talk Details"
+                          options={NavScreenOptions}
                           component={ThreadDetails}
                         />
                       </Stack.Navigator>
                     )}
                   </Tab.Screen>
-                  <Tab.Screen name="Contact" component={Calendly} />
+                  <Tab.Screen
+                    name="Contact"
+                    component={Calendly}
+                    options={NavScreenOptions}
+                  />
                   <Tab.Screen
                     name="Logout"
                     component={ButtonScreen}
@@ -459,3 +492,15 @@ export function App() {
     </Container>
   );
 }
+
+const NavScreenOptions = {
+  headerTitleStyle: {
+    color: 'white', // Change the text color
+    fontSize: 24, // Change the font size
+    fontWeight: 'bold', // Make the text bold
+    textAlign: 'center', // Center the text
+  },
+  headerStyle: {
+    backgroundColor: '#010049', // Change the background color of the header
+  },
+};
