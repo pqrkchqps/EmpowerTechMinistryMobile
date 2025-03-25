@@ -38,6 +38,7 @@ import {RouteContext, RouteProvider} from './components/RouteContext';
 import {useContext} from 'react';
 import {CommentContext} from './components/CommentContext';
 import {ThreadContext} from './components/ThreadContext';
+import {ErrorContext} from './components/ErrorContext';
 
 const socket = io(SOCKET_URL);
 
@@ -126,6 +127,7 @@ const Stack = createNativeStackNavigator();
 const WrappedContainer = wrapScrollView(Container);
 
 export function App() {
+  const {error} = useContext(ErrorContext);
   const [isAppReady, setIsAppReady] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [username, setUsername] = useState('');
@@ -141,6 +143,13 @@ export function App() {
     setScrollToId: setScrollToIdArticle,
   } = useContext(CommentContext);
   const {setSocketThread, setThreadId} = useContext(ThreadContext);
+
+  useEffect(() => {
+    if (error?.response?.status === 401) {
+      setLoggedIn(false);
+      loadLoginDetails();
+    }
+  }, [error]);
 
   async function displayNotification(title, body, data) {
     try {
