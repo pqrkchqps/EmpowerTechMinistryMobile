@@ -28,6 +28,7 @@ import {
   TextInput,
   ScrollView,
   Platform,
+  Alert,
 } from 'react-native';
 import styled from 'styled-components/native';
 import axios from './utils/axios';
@@ -239,9 +240,9 @@ export function App() {
           );
           break;
         case 'comment':
-          if (notification.type === 'thread')
+          if (notification.data.type === 'thread')
             setThreadComment(notification.data);
-          else if (notification.type === 'article')
+          else if (notification.data.type === 'article')
             setArticleComment(notification.data);
           await displayNotification(
             notification.data.title,
@@ -318,15 +319,24 @@ export function App() {
   };
 
   const handleLogout = async () => {
-    // Remove stored authentication token to log the user out
-    try {
-      await AsyncStorage.removeItem('authToken');
-      await Keychain.resetGenericPassword();
-      setLoggedIn(false);
-    } catch (error) {
-      console.error('Error while removing authentication token:', error);
-      console.log(error);
-    }
+    Alert.alert('Confirmation', 'Do you really want to logout?', [
+      {text: 'Cancel', onPress: () => {}},
+      {
+        text: 'Logout',
+        onPress: () => {
+          try {
+            AsyncStorage.removeItem('authToken').then(() => {
+              Keychain.resetGenericPassword().then(() => {
+                setLoggedIn(false);
+              });
+            });
+          } catch (error) {
+            console.error('Error while removing authentication token:', error);
+            console.log(error);
+          }
+        },
+      },
+    ]);
   };
 
   useEffect(() => {
@@ -442,7 +452,7 @@ export function App() {
                   <Tab.Screen
                     name="Articles"
                     options={{
-                      headerTitle: () => null,
+                      headerTintColor: 'white',
                     }}>
                     {() => (
                       <Stack.Navigator>
@@ -512,4 +522,5 @@ const NavScreenOptions = {
   headerStyle: {
     backgroundColor: '#010049', // Change the background color of the header
   },
+  headerTintColor: 'white',
 };
