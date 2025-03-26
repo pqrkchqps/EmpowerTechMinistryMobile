@@ -463,16 +463,16 @@ const ArticleDetails = () => {
     return true;
   }
 
-  const renderParagraph = (paragraph) => (
-    <SectionParagraph>{paragraph}</SectionParagraph>
-  )
+  const renderParagraph = (paragraph, index) => (
+    <SectionParagraph key={index}>{paragraph}</SectionParagraph>
+  );
 
   const renderSection = (section, index) => (
-    <>
+    <View key={index}>
       <SectionTitle index={index}>{section.title}</SectionTitle>
       {section?.paragraphs.map(renderParagraph)}
-    </>
-  )
+    </View>
+  );
 
   const renderItem = item => (
     <CommentContainer
