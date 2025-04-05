@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import Threads from './components/Threads';
 import ThreadDetails from './components/ThreadDetails';
 //import Contact from './components/Contact';
@@ -18,6 +18,7 @@ import * as Keychain from 'react-native-keychain';
 import config from './utils/env';
 const {API_URL, SOCKET_URL} = config;
 import {name as appName} from './app.json';
+import {getUniqueId} from 'react-native-device-info';
 
 import {
   View,
@@ -29,6 +30,7 @@ import {
   ScrollView,
   Platform,
   Alert,
+  AppState,
 } from 'react-native';
 import styled from 'styled-components/native';
 import axios from './utils/axios';
@@ -175,6 +177,7 @@ export function App() {
         data,
         android: {
           channelId,
+          smallIcon: 'notification_icon',
           // smallIcon: 'name-of-a-small-icon', // optional, defaults to 'ic_launcher'.
           // // pressAction is needed if you want the notification to open the app when pressed
           pressAction: {
@@ -230,7 +233,27 @@ export function App() {
   }
 
   function setSockets() {
+    let uidInterval = null;
+
+    socket.on('connect', async message => {
+      getUniqueId().then(uid => {
+        uidInterval = setInterval(function () {
+          socket.emit('uid', uid);
+        }, 500);
+      });
+    });
+
+    socket.on('uidRecieved', () => {
+      if (uidInterval) {
+        clearInterval(uidInterval);
+        uidInterval = null;
+      }
+    });
+
     socket.on('newNotification', async notification => {
+      getUniqueId().then(uid => {
+        socket.emit('notificationRecieved', {uid, messageId: notification.id});
+      })
       console.log('newNotification', notification);
       switch (notification.type) {
         case 'thread':
@@ -268,6 +291,43 @@ export function App() {
     setSockets();
     loadLoginDetails();
   }, []);
+
+  const appState = useRef(AppState.currentState);
+  useEffect(() => {
+    // Add event listener for app state changes
+    const appStateListener = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+
+    // Clean up the event listener and socket connection on component unmount
+    return () => {
+      appStateListener.remove();
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
+  }, []);
+
+  const handleAppStateChange = nextAppState => {
+    if (
+      appState.current.match(/inactive|background/) &&
+      nextAppState === 'active'
+    ) {
+      console.log('App has come to the foreground!');
+      // Reconnect the socket when the app becomes active
+      if (socket) {
+        socket.connect();
+      }
+    } else if (nextAppState.match(/inactive|background/)) {
+      console.log('App has gone to the background!');
+      // Disconnect the socket when the app goes to the background
+      if (socket) {
+        socket.disconnect();
+      }
+    }
+    appState.current = nextAppState;
+  };
 
   const handleLogin = async () => {
     // Implement login functionality here

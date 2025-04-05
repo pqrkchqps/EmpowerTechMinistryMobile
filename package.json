@@ -26,6 +26,7 @@
     "react-native": "^0.77.0",
     "react-native-avoid-softinput": "^7.0.1",
     "react-native-config": "^1.5.3",
+    "react-native-device-info": "^14.0.4",
     "react-native-edge-to-edge": "^1.4.3",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "^2.22.1",
