@@ -41,7 +41,9 @@ import {CommentContext} from './components/CommentContext';
 import {ThreadContext} from './components/ThreadContext';
 import {ErrorContext} from './components/ErrorContext';
 
-const socket = io(SOCKET_URL);
+const socket = io(SOCKET_URL, {
+  reconnection: true,
+});
 
 // Styled components
 const Container = styled.View`
