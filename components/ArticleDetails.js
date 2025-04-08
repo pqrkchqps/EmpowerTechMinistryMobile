@@ -156,7 +156,8 @@ const ArticleDetails = () => {
     });
   }, []);
 
-  const {socketComment, scrollToId, setScrollToId} = useContext(CommentContext);
+  const {socketComments, scrollToId, setScrollToId} =
+    useContext(CommentContext);
   const {articleId} = useContext(ArticleContext);
   const scrollFromRef = useRef(null);
   function useHookWithRefCallback() {
@@ -204,24 +205,26 @@ const ArticleDetails = () => {
     useState(false);
   const [editArticleTitle, setEditArticleTitle] = useState(false);
 
-  function addCommentToRootArticle(newComment) {
+  function addCommentsToRootArticle(newComments) {
     if (rootArticle) {
-      if (newComment.parentid == -1) {
-        rootArticle.children.push(newComment);
-      } else {
-        let chs = rootArticle.children;
-        console.log('chs', chs);
-        let queue = [...rootArticle.children];
-        while (queue.length > 0) {
-          let currentComment = queue.shift();
-          if (currentComment) {
-            if (currentComment.id == newComment.parentid) {
-              currentComment.children.push(newComment);
-              break;
-            } else {
-              currentComment.children.map(comment => {
-                queue.push(comment);
-              });
+      for (const newComment of newComments) {
+        if (newComment.parentid == -1) {
+          rootArticle.children.push(newComment);
+        } else {
+          let chs = rootArticle.children;
+          console.log('chs', chs);
+          let queue = [...rootArticle.children];
+          while (queue.length > 0) {
+            let currentComment = queue.shift();
+            if (currentComment) {
+              if (currentComment.id == newComment.parentid) {
+                currentComment.children.push(newComment);
+                break;
+              } else {
+                currentComment.children.map(comment => {
+                  queue.push(comment);
+                });
+              }
             }
           }
         }
@@ -304,11 +307,11 @@ const ArticleDetails = () => {
   }, [articleId]);
 
   useEffect(() => {
-    console.log('Socket comment', socketComment);
-    if (socketComment) {
-      addCommentToRootArticle(socketComment);
+    console.log('Socket comment', socketComments);
+    if (socketComments && socketComments.length > 0) {
+      addCommentsToRootArticle(socketComments);
     }
-  }, [socketComment]);
+  }, [socketComments]);
 
   const onFocusEffect = useCallback(() => {
     AvoidSoftInput.setEnabled(true);

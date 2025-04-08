@@ -98,16 +98,16 @@ const NewArticleContent = styled.TextInput`
 
 // Articles Component
 const Articles = ({navigation, scrollToId}) => {
-  const {socketArticle, setArticleId} = useContext(ArticleContext);
+  const {socketArticles, setArticleId} = useContext(ArticleContext);
   const [articles, setArticles] = useState([]);
   const [newArticleTitle, setNewArticleTitle] = useState('');
   const [newArticleContent, setNewArticleContent] = useState('');
 
   useEffect(() => {
-    if (socketArticle) {
-      setArticles(state => [...state, socketArticle]);
+    if (socketArticles && socketArticles.length > 0) {
+      setArticles(state => [...state, ...socketArticles]);
     }
-  }, [socketArticle]);
+  }, [socketArticles]);
 
   useEffect(() => {
     const promise = axios.get(API_URL + '/api/article');

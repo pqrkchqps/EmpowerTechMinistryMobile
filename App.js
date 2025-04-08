@@ -141,13 +141,13 @@ export function App() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   const {setRouteName} = useContext(RouteContext);
-  const {setSocketComment: setThreadComment, setScrollToId} =
+  const {setSocketComments: setThreadComments, setScrollToId} =
     useContext(CommentContext);
   const {
-    setSocketComment: setArticleComment,
+    setSocketComments: setArticleComments,
     setScrollToId: setScrollToIdArticle,
   } = useContext(CommentContext);
-  const {setSocketThread, setThreadId} = useContext(ThreadContext);
+  const {setSocketThreads, setThreadId} = useContext(ThreadContext);
 
   useEffect(() => {
     if (error?.response?.status === 401) {
@@ -234,9 +234,11 @@ export function App() {
 
   function setSockets() {
     let uidInterval = null;
+    let notificationsIntervals = [];
 
-    socket.on('connect', async message => {
+    socket.on('connect', () => {
       getUniqueId().then(uid => {
+        socket.emit('uid', uid);
         uidInterval = setInterval(function () {
           socket.emit('uid', uid);
         }, 500);
@@ -250,35 +252,50 @@ export function App() {
       }
     });
 
-    socket.on('newNotification', async notification => {
+    socket.on('notificationsAck', type => {
+      clearInterval(notificationsIntervals[type]);
+      notificationsIntervals[type] = null;
+    });
+
+    socket.on('newNotifications', async notifications => {
       getUniqueId().then(uid => {
-        socket.emit('notificationRecieved', {uid, messageId: notification.id});
-      })
-      console.log('newNotification', notification);
-      switch (notification.type) {
+        socket.emit('notificationsRecieved', {
+          uid,
+          type: notifications.type,
+        });
+        notificationsIntervals[notifications.type] = setInterval(function () {
+          socket.emit('notificationsRecieved', {
+            uid,
+            type: notifications.type,
+          });
+        }, 500);
+      });
+
+      console.log('newNotifications', notifications);
+      switch (notifications.type) {
         case 'thread':
-          setSocketThread(notification.data);
-          await displayNotification(
-            notification.data.title,
-            notification.data.username + ' - ' + notification.data.content,
-            {id: notification.data.id, type: notification.type},
-          );
+          setSocketThreads(notifications.data);
+          // await displayNotification(
+          //   notification.data.title,
+          //   notification.data.username + ' - ' + notification.data.content,
+          //   {id: notification.data.id, type: notification.type},
+          // );
           break;
         case 'comment':
-          if (notification.data.type === 'thread')
-            setThreadComment(notification.data);
-          else if (notification.data.type === 'article')
-            setArticleComment(notification.data);
-          await displayNotification(
-            notification.data.title,
-            notification.data.username + ' - ' + notification.data.content,
-            {
-              id: notification.data.rootid,
-              type: notification.type,
-              scrollToId: notification.data.id,
-            },
-          );
-          break;
+          if (notifications.data[0].type === 'thread')
+            setThreadComments(notifications.data);
+          else if (notifications.data[0].type === 'article')
+            setArticleComments(notifications.data);
+        // await displayNotification(
+        //   notification.data.title,
+        //   notification.data.username + ' - ' + notification.data.content,
+        //   {
+        //     id: notification.data.rootid,
+        //     type: notification.type,
+        //     scrollToId: notification.data.id,
+        //   },
+        // );
+        // break;
       }
     });
 
@@ -303,8 +320,8 @@ export function App() {
     // Clean up the event listener and socket connection on component unmount
     return () => {
       appStateListener.remove();
-      if (socket.current) {
-        socket.current.disconnect();
+      if (socket) {
+        socket.disconnect();
       }
     };
   }, []);

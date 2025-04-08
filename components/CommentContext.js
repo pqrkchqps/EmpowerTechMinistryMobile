@@ -3,12 +3,13 @@ import { createContext, useState } from "react";
 export const CommentContext = createContext()
 
 export function CommentProvider({children}){
-    const [socketComment, setSocketComment] = useState(null);
+    const [socketComments, setSocketComments] = useState(null);
     const [scrollToId, setScrollToId] = useState(null);
 
     return (
-        <CommentContext.Provider value={{socketComment, setSocketComment, scrollToId, setScrollToId}}>
-            {children}
-        </CommentContext.Provider>
-    )
+      <CommentContext.Provider
+        value={{socketComments, setSocketComments, scrollToId, setScrollToId}}>
+        {children}
+      </CommentContext.Provider>
+    );
 }

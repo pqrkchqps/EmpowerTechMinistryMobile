@@ -130,7 +130,9 @@ const ThreadDetails = () => {
     });
   }, []);
 
-  const {socketComment, scrollToId, setScrollToId} = useContext(CommentContext);
+  const {socketComments, scrollToId, setScrollToId} =
+    useContext(CommentContext);
+
   const {threadId} = useContext(ThreadContext);
   const scrollFromRef = useRef(null);
   function useHookWithRefCallback() {
@@ -178,24 +180,36 @@ const ThreadDetails = () => {
     useState(false);
   const [editThreadTitle, setEditThreadTitle] = useState(false);
 
-  function addCommentToRootThread(newComment) {
+  function addCommentsToRootThread(newComments) {
     if (rootThread) {
-      if (newComment.parentid == -1) {
-        rootThread.children.push(newComment);
-      } else {
-        let chs = rootThread.children;
-        console.log('chs', chs);
-        let queue = [...rootThread.children];
-        while (queue.length > 0) {
-          let currentComment = queue.shift();
-          if (currentComment) {
-            if (currentComment.id == newComment.parentid) {
-              currentComment.children.push(newComment);
-              break;
-            } else {
-              currentComment.children.map(comment => {
-                queue.push(comment);
-              });
+      for (const newComment of newComments) {
+        if (newComment.parentid == -1) {
+          const commentAlreadyThere = rootThread.children.filter(
+            c => c.id == newComment.id,
+          );
+          if (commentAlreadyThere.length == 0) {
+            rootThread.children.push(newComment);
+          }
+        } else {
+          let chs = rootThread.children;
+          console.log('chs', chs);
+          let queue = [...rootThread.children];
+          while (queue.length > 0) {
+            let currentComment = queue.shift();
+            if (currentComment) {
+              if (currentComment.id == newComment.parentid) {
+                const commentAlreadyThere = currentComment.children.filter(
+                  c => c.id == newComment.id,
+                );
+                if (commentAlreadyThere.length == 0) {
+                  currentComment.children.push(newComment);
+                }
+                break;
+              } else {
+                currentComment.children.map(comment => {
+                  queue.push(comment);
+                });
+              }
             }
           }
         }
@@ -278,11 +292,11 @@ const ThreadDetails = () => {
   }, [threadId]);
 
   useEffect(() => {
-    console.log('Socket comment', socketComment);
-    if (socketComment) {
-      addCommentToRootThread(socketComment);
+    console.log('Socket comment', socketComments);
+    if (socketComments) {
+      addCommentsToRootThread(socketComments);
     }
-  }, [socketComment]);
+  }, [socketComments]);
 
   const onFocusEffect = useCallback(() => {
     AvoidSoftInput.setEnabled(true);

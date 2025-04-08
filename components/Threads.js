@@ -90,16 +90,16 @@ const NewThreadContent = styled.TextInput.attrs({
 
 // Threads Component
 const Threads = ({navigation, scrollToId}) => {
-  const {socketThread, setThreadId} = useContext(ThreadContext);
+  const {socketThreads, setThreadId} = useContext(ThreadContext);
   const [threads, setThreads] = useState([]);
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [newThreadContent, setNewThreadContent] = useState('');
 
   useEffect(() => {
-    if (socketThread) {
-      setThreads(state => [...state, socketThread]);
+    if (socketThreads) {
+      setThreads(state => [...state, ...socketThreads]);
     }
-  }, [socketThread]);
+  }, [socketThreads]);
 
   useEffect(() => {
     const promise = axios.get(API_URL + '/api/thread');
