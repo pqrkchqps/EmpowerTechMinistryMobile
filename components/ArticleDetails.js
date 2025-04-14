@@ -329,7 +329,7 @@ const ArticleDetails = () => {
         rootid: articleId,
         parentid: replyingTo !== null ? replyingTo : -1,
       };
-      if (comment.content.trim() === '') {
+      if (comment.content.trim() == '') {
         return;
       }
       setIsDisabledPostReply(true);
@@ -358,7 +358,7 @@ const ArticleDetails = () => {
         content: editCommentText,
         id: editingTo,
       };
-      if (comment.content.trim() === '') {
+      if (comment.content.trim() == '') {
         return;
       }
       setIsDisabledEditComment(true);
@@ -381,7 +381,7 @@ const ArticleDetails = () => {
         content: editCommentText,
         id: rootArticle.id,
       };
-      if (article.title.trim() === '') {
+      if (article.title.trim() == '') {
         return;
       }
       setIsDisabledEditComment(true);
@@ -488,7 +488,7 @@ const ArticleDetails = () => {
         </CommentDateDetails>
       </HeadingContainer>
       <CommentText>
-        {editingTo === item.id && setOnceEditCommentText(item.content) ? (
+        {editingTo == item.id && setOnceEditCommentText(item.content) ? (
           <CommentForm>
             <NewCommentInput
               placeholder="Edit this comment"
@@ -502,7 +502,7 @@ const ArticleDetails = () => {
       </CommentText>
       {!editingTo && (
         <>
-          {replyingTo === item.id ? (
+          {replyingTo == item.id ? (
             <CommentForm>
               <NewCommentInput
                 placeholder="Reply to this comment"
@@ -527,9 +527,9 @@ const ArticleDetails = () => {
           )}
         </>
       )}
-      {item.userid.toString() === userId && !replyingTo && (
+      {item.userid.toString() == userId && !replyingTo && (
         <>
-          {editingTo === item.id ? (
+          {editingTo == item.id ? (
             <>
               <CommentButton
                 disabled={isDisabledEditComment}
@@ -549,7 +549,7 @@ const ArticleDetails = () => {
           )}
         </>
       )}
-      {item.userid.toString() === userId &&
+      {item.userid.toString() == userId &&
         !editingTo &&
         !replyingTo &&
         item.content !== 'deleted' && (
@@ -570,7 +570,7 @@ const ArticleDetails = () => {
         {/* Display article comments */}
         <ScrollView ref={scrollFromRef}>
           <ArticleTitle>
-            {editingTo === -1 &&
+            {editingTo == -1 &&
             rootArticle &&
             setOnceEditArticleTitle(rootArticle.title) ? (
               <CommentForm>
@@ -586,8 +586,8 @@ const ArticleDetails = () => {
           </ArticleTitle>
           <HeadingContainer>
             {rootArticle && (
-              <Image 
-                source={{uri: rootArticle.image}} 
+              <Image
+                source={{uri: rootArticle.image}}
                 style={{width: '100%', height: 300}}
               />
             )}
@@ -604,7 +604,7 @@ const ArticleDetails = () => {
             {rootArticle?.sections.map(renderSection)}
           </BodyContainer>
           <ArticleContent>
-            {editingTo === -1 &&
+            {editingTo == -1 &&
             rootArticle &&
             setOnceEditCommentText(rootArticle.content) ? (
               <CommentForm>
@@ -618,9 +618,9 @@ const ArticleDetails = () => {
               rootArticle && rootArticle.content
             )}
           </ArticleContent>
-          {rootArticle && rootArticle.userid.toString() === userId && (
+          {rootArticle && rootArticle.userid.toString() == userId && (
             <>
-              {editingTo === -1 ? (
+              {editingTo == -1 ? (
                 <>
                   <CommentButton
                     disabled={isDisabledEditComment}
@@ -633,9 +633,7 @@ const ArticleDetails = () => {
                     <CommentButtonText>Cancel Edit</CommentButtonText>
                   </CommentButton>
                 </>
-              ) : (
-                null
-              )}
+              ) : null}
             </>
           )}
           {rootArticle &&

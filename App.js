@@ -19,6 +19,9 @@ import config from './utils/env';
 const {API_URL, SOCKET_URL} = config;
 import {name as appName} from './app.json';
 import {getUniqueId} from 'react-native-device-info';
+import firebase from '@react-native-firebase/app';
+
+import messaging from '@react-native-firebase/messaging';
 
 import {
   View,
@@ -150,11 +153,71 @@ export function App() {
   const {setSocketThreads, setThreadId} = useContext(ThreadContext);
 
   useEffect(() => {
-    if (error?.response?.status === 401) {
+    if (error?.response?.status == 401) {
       setLoggedIn(false);
       loadLoginDetails();
     }
   }, [error]);
+
+  const firebaseConfig = {
+    projectId: 'empower-tech-ministry-18d81',
+    messagingSenderId: '176389127114',
+    appId: '1:176389127114:android:602988a8bba78503fd2d33',
+    apiKey: 'AIzaSyDeA8l8Xcq2L1tM3DI7X4n1YmaDbdT3pJE',
+  };
+
+  const initializeApp = async () => {
+    try {
+      await firebase.initializeApp(firebaseConfig);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  async function routeNotification(notification) {
+    switch (notification.type) {
+      case 'thread':
+        setSocketThreads([notification.data]);
+        // await displayNotification(
+        //   notification.data.title,
+        //   notification.data.username + ' - ' + notification.data.content,
+        //   {id: notification.data.id, type: notification.type},
+        // );
+        break;
+      case 'comment':
+        if (notification.data.type == 'thread')
+          setThreadComments([notification.data]);
+        else if (notification.data.type == 'article')
+          setArticleComments([notification.data]);
+        // await displayNotification(
+        //   notification.data.title,
+        //   notification.data.username + ' - ' + notification.data.content,
+        //   {
+        //     id: notification.data.rootid,
+        //     type: notification.type,
+        //     scrollToId: notification.data.id,
+        //   },
+        // );
+        break;
+    }
+  }
+
+  // Register background handler
+  messaging().setBackgroundMessageHandler(async remoteMessage => {
+    console.log('Message handled in the background!', remoteMessage);
+    routeNotification(JSON.parse(remoteMessage.data.payload));
+  });
+
+  const unsubscribe = messaging().onMessage(async remoteMessage => {
+    console.log('Message handled in the foreground!', remoteMessage);
+    routeNotification(JSON.parse(remoteMessage.data.payload));
+  });
+
+  useEffect(() => {
+    initializeApp();
+    //subscribeToTopic();
+    //createNotificationListeners();
+  }, []);
 
   async function displayNotification(title, body, data) {
     try {
@@ -187,6 +250,27 @@ export function App() {
       });
     } catch (e) {
       console.log('err: ', e);
+    }
+  }
+
+  messaging().onNotificationOpenedApp(remoteMessage => {
+    console.log(remoteMessage);
+    const notification = JSON.parse(remoteMessage.data.payload);
+    routeNotificationToClick(notification);
+  });
+
+  function routeNotificationToClick(notification) {
+    switch (notification.type) {
+      case 'thread':
+        setThreadId(notification.data.id);
+        setScrollToId(null);
+        setRouteName('Talk Details');
+        break;
+      case 'comment':
+        setThreadId(notification.data.rootid);
+        setScrollToId(notification.data.id);
+        setRouteName('Talk Details');
+        break;
     }
   }
 
@@ -238,10 +322,15 @@ export function App() {
 
     socket.on('connect', () => {
       getUniqueId().then(uid => {
-        socket.emit('uid', uid);
-        uidInterval = setInterval(function () {
-          socket.emit('uid', uid);
-        }, 500);
+        messaging()
+          .getToken()
+          .then(token => {
+            console.log('uid, token', uid, token);
+            socket.emit('uid', {uid, token});
+            uidInterval = setInterval(function () {
+              socket.emit('uid', {uid, token});
+            }, 500);
+          });
       });
     });
 
@@ -282,9 +371,9 @@ export function App() {
           // );
           break;
         case 'comment':
-          if (notifications.data[0].type === 'thread')
+          if (notifications.data[0].type == 'thread')
             setThreadComments(notifications.data);
-          else if (notifications.data[0].type === 'article')
+          else if (notifications.data[0].type == 'article')
             setArticleComments(notifications.data);
         // await displayNotification(
         //   notification.data.title,
@@ -309,42 +398,42 @@ export function App() {
     loadLoginDetails();
   }, []);
 
-  const appState = useRef(AppState.currentState);
-  useEffect(() => {
-    // Add event listener for app state changes
-    const appStateListener = AppState.addEventListener(
-      'change',
-      handleAppStateChange,
-    );
+  // const appState = useRef(AppState.currentState);
+  // useEffect(() => {
+  //   // Add event listener for app state changes
+  //   const appStateListener = AppState.addEventListener(
+  //     'change',
+  //     handleAppStateChange,
+  //   );
 
-    // Clean up the event listener and socket connection on component unmount
-    return () => {
-      appStateListener.remove();
-      if (socket) {
-        socket.disconnect();
-      }
-    };
-  }, []);
+  //   // Clean up the event listener and socket connection on component unmount
+  //   return () => {
+  //     appStateListener.remove();
+  //     if (socket) {
+  //       socket.disconnect();
+  //     }
+  //   };
+  // }, []);
 
-  const handleAppStateChange = nextAppState => {
-    if (
-      appState.current.match(/inactive|background/) &&
-      nextAppState === 'active'
-    ) {
-      console.log('App has come to the foreground!');
-      // Reconnect the socket when the app becomes active
-      if (socket) {
-        socket.connect();
-      }
-    } else if (nextAppState.match(/inactive|background/)) {
-      console.log('App has gone to the background!');
-      // Disconnect the socket when the app goes to the background
-      if (socket) {
-        socket.disconnect();
-      }
-    }
-    appState.current = nextAppState;
-  };
+  // const handleAppStateChange = nextAppState => {
+  //   if (
+  //     appState.current.match(/inactive|background/) &&
+  //     nextAppState == 'active'
+  //   ) {
+  //     console.log('App has come to the foreground!');
+  //     // Reconnect the socket when the app becomes active
+  //     if (socket) {
+  //       socket.connect();
+  //     }
+  //   } else if (nextAppState.match(/inactive|background/)) {
+  //     console.log('App has gone to the background!');
+  //     // Disconnect the socket when the app goes to the background
+  //     if (socket) {
+  //       socket.disconnect();
+  //     }
+  //   }
+  //   appState.current = nextAppState;
+  // };
 
   const handleLogin = async () => {
     // Implement login functionality here

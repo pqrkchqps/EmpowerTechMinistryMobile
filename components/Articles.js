@@ -117,7 +117,7 @@ const Articles = ({navigation, scrollToId}) => {
   }, []);
 
   const handleAddArticle = async () => {
-    if (newArticleTitle.trim() === '') {
+    if (newArticleTitle.trim() == '') {
       return;
     }
 

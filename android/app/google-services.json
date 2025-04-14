@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "176389127114",
+    "project_id": "empower-tech-ministry-18d81",
+    "storage_bucket": "empower-tech-ministry-18d81.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:176389127114:android:602988a8bba78503fd2d33",
+        "android_client_info": {
+          "package_name": "com.empowertechministry"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDeA8l8Xcq2L1tM3DI7X4n1YmaDbdT3pJE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

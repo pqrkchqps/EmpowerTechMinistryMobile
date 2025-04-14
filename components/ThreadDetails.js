@@ -314,7 +314,7 @@ const ThreadDetails = () => {
         rootid: threadId,
         parentid: replyingTo !== null ? replyingTo : -1,
       };
-      if (comment.content.trim() === '') {
+      if (comment.content.trim() == '') {
         return;
       }
       setIsDisabledPostReply(true);
@@ -343,7 +343,7 @@ const ThreadDetails = () => {
         content: editCommentText,
         id: editingTo,
       };
-      if (comment.content.trim() === '') {
+      if (comment.content.trim() == '') {
         return;
       }
       setIsDisabledEditComment(true);
@@ -366,7 +366,7 @@ const ThreadDetails = () => {
         content: editCommentText,
         id: rootThread.id,
       };
-      if (thread.title.trim() === '') {
+      if (thread.title.trim() == '') {
         return;
       }
       setIsDisabledEditComment(true);
@@ -462,7 +462,7 @@ const ThreadDetails = () => {
         </CommentDateDetails>
       </HeadingContainer>
       <CommentText>
-        {editingTo === item.id && setOnceEditCommentText(item.content) ? (
+        {editingTo == item.id && setOnceEditCommentText(item.content) ? (
           <CommentForm>
             <NewCommentInput
               placeholder="Edit this comment"
@@ -476,7 +476,7 @@ const ThreadDetails = () => {
       </CommentText>
       {!editingTo && (
         <>
-          {replyingTo === item.id ? (
+          {replyingTo == item.id ? (
             <CommentForm>
               <NewCommentInput
                 placeholder="Reply to this comment"
@@ -501,9 +501,9 @@ const ThreadDetails = () => {
           )}
         </>
       )}
-      {item.userid.toString() === userId && !replyingTo && (
+      {item.userid.toString() == userId && !replyingTo && (
         <>
-          {editingTo === item.id ? (
+          {editingTo == item.id ? (
             <>
               <CommentButton
                 disabled={isDisabledEditComment}
@@ -523,7 +523,7 @@ const ThreadDetails = () => {
           )}
         </>
       )}
-      {item.userid.toString() === userId &&
+      {item.userid.toString() == userId &&
         !editingTo &&
         !replyingTo &&
         item.content !== 'deleted' && (
@@ -544,7 +544,7 @@ const ThreadDetails = () => {
         {/* Display thread comments */}
         <ScrollView ref={scrollFromRef}>
           <ThreadTitle>
-            {editingTo === -1 &&
+            {editingTo == -1 &&
             rootThread &&
             setOnceEditArticleTitle(rootThread.title) ? (
               <CommentForm>
@@ -569,7 +569,7 @@ const ThreadDetails = () => {
             </ThreadDateDetails>
           </HeadingContainer>
           <ThreadContent>
-            {editingTo === -1 &&
+            {editingTo == -1 &&
             rootThread &&
             setOnceEditCommentText(rootThread.content) ? (
               <CommentForm>
@@ -583,9 +583,9 @@ const ThreadDetails = () => {
               rootThread && rootThread.content
             )}
           </ThreadContent>
-          {rootThread && rootThread.userid.toString() === userId && (
+          {rootThread && rootThread.userid.toString() == userId && (
             <>
-              {editingTo === -1 ? (
+              {editingTo == -1 ? (
                 <>
                   <CommentButton
                     disabled={isDisabledEditComment}
