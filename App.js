@@ -45,6 +45,7 @@ import {useContext} from 'react';
 import {CommentContext} from './components/CommentContext';
 import {ThreadContext} from './components/ThreadContext';
 import {ErrorContext} from './components/ErrorContext';
+import {ArticleContext} from './components/ArticleContext';
 
 const socket = io(SOCKET_URL, {
   reconnection: true,
@@ -151,6 +152,7 @@ export function App() {
     setScrollToId: setScrollToIdArticle,
   } = useContext(CommentContext);
   const {setSocketThreads, setThreadId} = useContext(ThreadContext);
+  const {setArticleId} = useContext(ArticleContext);
 
   useEffect(() => {
     if (error?.response?.status == 401) {
@@ -267,9 +269,15 @@ export function App() {
         setRouteName('Talk Details');
         break;
       case 'comment':
-        setThreadId(notification.data.rootid);
-        setScrollToId(notification.data.id);
-        setRouteName('Talk Details');
+        if (notification.data.type == 'thread') {
+          setThreadId(notification.data.rootid);
+          setScrollToId(notification.data.id);
+          setRouteName('Talk Details');
+        } else if (notification.data.type == 'article') {
+          setArticleId(notification.data.rootid);
+          setScrollToId(notification.data.id);
+          setRouteName('Article Details');
+        }
         break;
     }
   }
