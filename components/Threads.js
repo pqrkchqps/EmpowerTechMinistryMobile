@@ -2,7 +2,6 @@ import React, {useCallback, useContext, useEffect, useRef, useState} from 'react
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   FlatList,
   TouchableOpacity,
@@ -14,23 +13,16 @@ import {AvoidSoftInput, AvoidSoftInputView} from 'react-native-avoid-softinput';
 import styled from 'styled-components/native';
 import axios from '../utils/axios';
 import config from '../utils/env';
-const { API_URL } = config;
+const {API_URL} = config;
 import RedirectNavigator from './RedirectNavigator';
 import {ThreadContext} from './ThreadContext';
-import { useFocusEffect } from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
 
 // Styled components
 const Container = styled.View`
   flex: 1;
   background-color: #ffffff;
   padding: 20px;
-`;
-
-const Title = styled.Text`
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10px;
 `;
 
 const ThreadItem = styled.View`
@@ -129,14 +121,14 @@ const Threads = ({navigation, scrollToId}) => {
     navigation.navigate('Talk Details');
   };
 
-    const onFocusEffect = useCallback(() => {
-      AvoidSoftInput.setEnabled(true);
-      return () => {
-        AvoidSoftInput.setEnabled(false);
-      };
-    }, []);
-  
-    useFocusEffect(onFocusEffect);
+  const onFocusEffect = useCallback(() => {
+    AvoidSoftInput.setEnabled(true);
+    return () => {
+      AvoidSoftInput.setEnabled(false);
+    };
+  }, []);
+
+  useFocusEffect(onFocusEffect);
 
   const renderItem = ({item: thread}) => (
     <TouchableOpacity
@@ -191,10 +183,5 @@ const Threads = ({navigation, scrollToId}) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default Threads;

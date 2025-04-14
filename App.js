@@ -1,7 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
 import Threads from './components/Threads';
 import ThreadDetails from './components/ThreadDetails';
-//import Contact from './components/Contact';
 import Calendly from './components/Calendly';
 import Articles from './components/Articles';
 import ArticleDetails from './components/ArticleDetails';
@@ -10,7 +9,6 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Icon from '@react-native-vector-icons/fontawesome';
 import {WithSplashScreen} from './components/Splash';
-import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
 window.navigator.userAgent = 'react-native';
 import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -83,23 +81,8 @@ const Title = styled.Text`
   margin-bottom: 20px;
 `;
 
-const ContactInfo = styled.View`
-  margin-top: 20px;
-`;
-
 const ContactItem = styled.View`
   margin-top: 10px;
-`;
-
-const ContactIcon = styled.Image`
-  width: 25px;
-  height: 25px;
-  margin-right: 10px;
-`;
-
-const ContactText = styled.Text`
-  font-size: 16px;
-  color: #555;
 `;
 
 const Input = styled.TextInput.attrs({
@@ -175,24 +158,9 @@ export function App() {
     switch (notification.type) {
       case 'thread':
         setSocketThreads([notification.data]);
-        // await displayNotification(
-        //   notification.data.title,
-        //   notification.data.username + ' - ' + notification.data.content,
-        //   {id: notification.data.id, type: notification.type},
-        // );
         break;
       case 'comment':
         setSocketComments([notification.data]);
-
-        // await displayNotification(
-        //   notification.data.title,
-        //   notification.data.username + ' - ' + notification.data.content,
-        //   {
-        //     id: notification.data.rootid,
-        //     type: notification.type,
-        //     scrollToId: notification.data.id,
-        //   },
-        // );
         break;
     }
   }
@@ -203,50 +171,14 @@ export function App() {
     routeNotification(JSON.parse(remoteMessage.data.payload));
   });
 
-  const unsubscribe = messaging().onMessage(async remoteMessage => {
+  messaging().onMessage(async remoteMessage => {
     console.log('Message handled in the foreground!', remoteMessage);
     routeNotification(JSON.parse(remoteMessage.data.payload));
   });
 
   useEffect(() => {
     initializeApp();
-    //subscribeToTopic();
-    //createNotificationListeners();
   }, []);
-
-  async function displayNotification(title, body, data) {
-    try {
-      console.log('displayNotification', title, body, data);
-
-      // Request permissions (required for iOS)
-      await notifee.requestPermission();
-
-      // Create a channel (required for Android)
-      const channelId = await notifee.createChannel({
-        id: 'talk_activity',
-        name: 'Talk Activity',
-        importance: AndroidImportance.HIGH,
-      });
-
-      // Display a notification
-      await notifee.displayNotification({
-        title,
-        body,
-        data,
-        android: {
-          channelId,
-          smallIcon: 'notification_icon',
-          // smallIcon: 'name-of-a-small-icon', // optional, defaults to 'ic_launcher'.
-          // // pressAction is needed if you want the notification to open the app when pressed
-          pressAction: {
-            id: 'default',
-          },
-        },
-      });
-    } catch (e) {
-      console.log('err: ', e);
-    }
-  }
 
   messaging().onNotificationOpenedApp(remoteMessage => {
     console.log(remoteMessage);
@@ -274,39 +206,6 @@ export function App() {
         break;
     }
   }
-
-  function handleNotificationClick(type, detail) {
-    switch (type) {
-      case EventType.DISMISSED:
-        console.log('User dismissed notification', detail.notification);
-        break;
-      case EventType.PRESS:
-        const {notification, pressAction} = detail;
-
-        console.log('User pressed notification', detail.notification);
-        switch (notification.data.type) {
-          case 'thread':
-            setThreadId(notification.data.id);
-            setScrollToId(null);
-            setRouteName('Talk Details');
-            break;
-          case 'comment':
-            setThreadId(notification.data.id);
-            setScrollToId(notification.data.scrollToId);
-            setRouteName('Talk Details');
-            break;
-        }
-    }
-  }
-
-  useEffect(() => {
-    notifee.onBackgroundEvent(async ({type, detail}) =>
-      handleNotificationClick(type, detail),
-    );
-    notifee.onForegroundEvent(async ({type, detail}) =>
-      handleNotificationClick(type, detail),
-    );
-  }, []);
 
   function loadLoginDetails() {
     // Check for stored authentication token upon app launch
@@ -365,25 +264,10 @@ export function App() {
       switch (notifications.type) {
         case 'thread':
           setSocketThreads(notifications.data);
-          // await displayNotification(
-          //   notification.data.title,
-          //   notification.data.username + ' - ' + notification.data.content,
-          //   {id: notification.data.id, type: notification.type},
-          // );
           break;
         case 'comment':
           setThreadComments(notifications.data);
-
-        // await displayNotification(
-        //   notification.data.title,
-        //   notification.data.username + ' - ' + notification.data.content,
-        //   {
-        //     id: notification.data.rootid,
-        //     type: notification.type,
-        //     scrollToId: notification.data.id,
-        //   },
-        // );
-        // break;
+          break;
       }
     });
 
@@ -397,42 +281,42 @@ export function App() {
     loadLoginDetails();
   }, []);
 
-  // const appState = useRef(AppState.currentState);
-  // useEffect(() => {
-  //   // Add event listener for app state changes
-  //   const appStateListener = AppState.addEventListener(
-  //     'change',
-  //     handleAppStateChange,
-  //   );
+  const appState = useRef(AppState.currentState);
+  useEffect(() => {
+    // Add event listener for app state changes
+    const appStateListener = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
 
-  //   // Clean up the event listener and socket connection on component unmount
-  //   return () => {
-  //     appStateListener.remove();
-  //     if (socket) {
-  //       socket.disconnect();
-  //     }
-  //   };
-  // }, []);
+    // Clean up the event listener and socket connection on component unmount
+    return () => {
+      appStateListener.remove();
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+  }, []);
 
-  // const handleAppStateChange = nextAppState => {
-  //   if (
-  //     appState.current.match(/inactive|background/) &&
-  //     nextAppState == 'active'
-  //   ) {
-  //     console.log('App has come to the foreground!');
-  //     // Reconnect the socket when the app becomes active
-  //     if (socket) {
-  //       socket.connect();
-  //     }
-  //   } else if (nextAppState.match(/inactive|background/)) {
-  //     console.log('App has gone to the background!');
-  //     // Disconnect the socket when the app goes to the background
-  //     if (socket) {
-  //       socket.disconnect();
-  //     }
-  //   }
-  //   appState.current = nextAppState;
-  // };
+  const handleAppStateChange = nextAppState => {
+    if (
+      appState.current.match(/inactive|background/) &&
+      nextAppState == 'active'
+    ) {
+      console.log('App has come to the foreground!');
+      // Reconnect the socket when the app becomes active
+      if (socket) {
+        socket.connect();
+      }
+    } else if (nextAppState.match(/inactive|background/)) {
+      console.log('App has gone to the background!');
+      // Disconnect the socket when the app goes to the background
+      if (socket) {
+        socket.disconnect();
+      }
+    }
+    appState.current = nextAppState;
+  };
 
   const handleLogin = async () => {
     // Implement login functionality here
