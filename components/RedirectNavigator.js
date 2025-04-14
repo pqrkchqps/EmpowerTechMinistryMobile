@@ -13,6 +13,11 @@ function RedirectNavigator({children}){
                   screen: routeName,
                   params: routeParams,
                 });
+            } else if (routeName == "Article Details"){
+                navigation.navigate('Articles', {
+                    screen: routeName,
+                    params: routeParams,
+                  });
             } else {
                 navigation.navigate(routeName, routeParams)    
             }

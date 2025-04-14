@@ -209,7 +209,12 @@ const ArticleDetails = () => {
     if (rootArticle) {
       for (const newComment of newComments) {
         if (newComment.parentid == -1) {
-          rootArticle.children.push(newComment);
+          const commentAlreadyThere = rootArticle.children.filter(
+            c => c.id == newComment.id,
+          );
+          if (commentAlreadyThere.length == 0) {
+            rootArticle.children.push(newComment);
+          }
         } else {
           let chs = rootArticle.children;
           console.log('chs', chs);
@@ -218,7 +223,12 @@ const ArticleDetails = () => {
             let currentComment = queue.shift();
             if (currentComment) {
               if (currentComment.id == newComment.parentid) {
-                currentComment.children.push(newComment);
+                const commentAlreadyThere = currentComment.children.filter(
+                  c => c.id == newComment.id,
+                );
+                if (commentAlreadyThere.length == 0) {
+                  currentComment.children.push(newComment);
+                }
                 break;
               } else {
                 currentComment.children.map(comment => {

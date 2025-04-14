@@ -145,12 +145,7 @@ export function App() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   const {setRouteName} = useContext(RouteContext);
-  const {setSocketComments: setThreadComments, setScrollToId} =
-    useContext(CommentContext);
-  const {
-    setSocketComments: setArticleComments,
-    setScrollToId: setScrollToIdArticle,
-  } = useContext(CommentContext);
+  const {setSocketComments, setScrollToId} = useContext(CommentContext);
   const {setSocketThreads, setThreadId} = useContext(ThreadContext);
   const {setArticleId} = useContext(ArticleContext);
 
@@ -187,10 +182,8 @@ export function App() {
         // );
         break;
       case 'comment':
-        if (notification.data.type == 'thread')
-          setThreadComments([notification.data]);
-        else if (notification.data.type == 'article')
-          setArticleComments([notification.data]);
+        setSocketComments([notification.data]);
+
         // await displayNotification(
         //   notification.data.title,
         //   notification.data.username + ' - ' + notification.data.content,
@@ -379,10 +372,8 @@ export function App() {
           // );
           break;
         case 'comment':
-          if (notifications.data[0].type == 'thread')
-            setThreadComments(notifications.data);
-          else if (notifications.data[0].type == 'article')
-            setArticleComments(notifications.data);
+          setThreadComments(notifications.data);
+
         // await displayNotification(
         //   notification.data.title,
         //   notification.data.username + ' - ' + notification.data.content,
