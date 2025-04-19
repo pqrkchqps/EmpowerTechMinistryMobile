@@ -72,7 +72,6 @@ export const Splash = ({isAppReady, children}) => {
         0,
         {
           duration: 500,
-          easing: Easing.in(Easing.cubic),
         },
         () => {
           runOnJS(setState)(HIDDEN);

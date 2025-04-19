@@ -82,7 +82,7 @@ const Title = styled.Text`
 `;
 
 const ContactItem = styled.View`
-  margin-top: 10px;
+  margin-top: 20px;
 `;
 
 const Input = styled.TextInput.attrs({
@@ -185,6 +185,8 @@ export function App() {
     const notification = JSON.parse(remoteMessage.data.payload);
     routeNotificationToClick(notification);
   });
+
+  messaging().onPress;
 
   function routeNotificationToClick(notification) {
     switch (notification.type) {
@@ -451,15 +453,17 @@ export function App() {
                 <ButtonText>Login</ButtonText>
               </Button>
 
-              <ContactItem>
-                <Text>
-                  Forgot Your Password
-                  <LinkText onPress={handleSendPasswordReset}>
-                    {' '}
-                    Send Password Reset Link
-                  </LinkText>
-                </Text>
-              </ContactItem>
+              {false && (
+                <ContactItem>
+                  <Text>
+                    Forgot Your Password
+                    <LinkText onPress={handleSendPasswordReset}>
+                      {' '}
+                      Send Password Reset Link
+                    </LinkText>
+                  </Text>
+                </ContactItem>
+              )}
 
               <ContactItem>
                 <Text>

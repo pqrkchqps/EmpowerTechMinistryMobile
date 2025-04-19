@@ -17,6 +17,14 @@ const {API_URL} = config;
 import RedirectNavigator from './RedirectNavigator';
 import {ThreadContext} from './ThreadContext';
 import {useFocusEffect} from '@react-navigation/native';
+import LottieView from 'lottie-react-native';
+
+const CenterContent = styled.View`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+`;
 
 // Styled components
 const Container = styled.View`
@@ -86,6 +94,7 @@ const Threads = ({navigation, scrollToId}) => {
   const [threads, setThreads] = useState([]);
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [newThreadContent, setNewThreadContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (socketThreads) {
@@ -97,6 +106,7 @@ const Threads = ({navigation, scrollToId}) => {
     const promise = axios.get(API_URL + '/api/thread');
     promise.then(response => {
       setThreads(response.data.threads);
+      setIsLoading(false);
     });
   }, []);
 
@@ -150,35 +160,53 @@ const Threads = ({navigation, scrollToId}) => {
 
   return (
     <Container>
-      <AvoidSoftInputView>
-        <RedirectNavigator />
-        <FlatList
-          data={threads}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => 'key-' + item.id}
-          ListFooterComponent={
-            <NewThreadForm>
-              <NewThreadTitle
-                placeholder="Thread Title"
-                value={newThreadTitle}
-                onChangeText={text => setNewThreadTitle(text)}
-              />
-              <NewThreadContent
-                multiline
-                placeholder="Thread Content"
-                value={newThreadContent}
-                onChangeText={text => setNewThreadContent(text)}
-              />
-              <TouchableOpacity onPress={handleAddThread}>
-                <Text
-                  style={{color: '#007BFF', fontSize: 18, textAlign: 'center'}}>
-                  Create Thread
-                </Text>
-              </TouchableOpacity>
-            </NewThreadForm>
-          }
-        />
-      </AvoidSoftInputView>
+      {isLoading ? (
+        <CenterContent>
+          <LottieView
+            source={require('../images/rocket-loader.json')}
+            style={{
+              width: 250,
+              height: 250,
+            }}
+            autoPlay
+            loop
+          />
+        </CenterContent>
+      ) : (
+        <AvoidSoftInputView>
+          <RedirectNavigator />
+          <FlatList
+            data={threads}
+            renderItem={renderItem}
+            keyExtractor={(item, index) => 'key-' + item.id}
+            ListFooterComponent={
+              <NewThreadForm>
+                <NewThreadTitle
+                  placeholder="Thread Title"
+                  value={newThreadTitle}
+                  onChangeText={text => setNewThreadTitle(text)}
+                />
+                <NewThreadContent
+                  multiline
+                  placeholder="Thread Content"
+                  value={newThreadContent}
+                  onChangeText={text => setNewThreadContent(text)}
+                />
+                <TouchableOpacity onPress={handleAddThread}>
+                  <Text
+                    style={{
+                      color: '#007BFF',
+                      fontSize: 18,
+                      textAlign: 'center',
+                    }}>
+                    Create Thread
+                  </Text>
+                </TouchableOpacity>
+              </NewThreadForm>
+            }
+          />
+        </AvoidSoftInputView>
+      )}
     </Container>
   );
 };

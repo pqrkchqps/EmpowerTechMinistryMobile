@@ -9,7 +9,6 @@ import React, {
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -21,6 +20,7 @@ import {AvoidSoftInput, AvoidSoftInputView} from 'react-native-avoid-softinput';
 import {CommentContext} from './CommentContext';
 import {ArticleContext} from './ArticleContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LottieView from 'lottie-react-native';
 
 import styled from 'styled-components/native';
 import axios from '../utils/axios';
@@ -142,54 +142,17 @@ const CommentButtonText = styled.Text`
   font-size: 16px;
 `;
 
-const BackButton = styled.TouchableOpacity`
-  margin-top: 20px;
+const CenterContent = styled.View`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 `;
 
 // ArticleDetails Component
 const ArticleDetails = () => {
   const [userId, setUserId] = useState();
-
-  useEffect(() => {
-    AsyncStorage.getItem('userId', userId).then(value => {
-      setUserId(value);
-    });
-  }, []);
-
-  const {socketComments, scrollToId, setScrollToId} =
-    useContext(CommentContext);
-  const {articleId} = useContext(ArticleContext);
-  const scrollFromRef = useRef(null);
-  function useHookWithRefCallback() {
-    const ref = useRef(null);
-    const setRef = useCallback(node => {
-      if (ref.current) {
-        // Make sure to cleanup any events/references added to the last instance
-      }
-
-      if (node && scrollFromRef && scrollFromRef.current) {
-        setReplyingTo(scrollToId);
-        scrollFromRef.current.scrollTo({x: 0, y: 0, animated: false});
-        setTimeout(() => {
-          node.measure((x, y, width, height, pageX, pageY) => {
-            console.log(x, y, width, height, pageX, pageY);
-            scrollFromRef.current.scrollTo({
-              x: 0,
-              y: pageY - 100 - 100,
-              animated: true,
-            });
-          });
-        }, 1000);
-        setScrollToId(null);
-      }
-
-      // Save a reference to the node
-      ref.current = node;
-    }, []);
-
-    return [setRef];
-  }
-  const [scrollToRef] = useHookWithRefCallback();
+  const [isLoading, setIsLoading] = useState(true);
 
   const [newComment, setNewComment] = useState('');
   const [newReply, setNewReply] = useState('');
@@ -205,35 +168,77 @@ const ArticleDetails = () => {
     useState(false);
   const [editArticleTitle, setEditArticleTitle] = useState(false);
 
+  useEffect(() => {
+    AsyncStorage.getItem('userId', userId).then(value => {
+      setUserId(value);
+    });
+  }, []);
+
+  const {socketComments, scrollToId, setScrollToId} =
+    useContext(CommentContext);
+  const {articleId} = useContext(ArticleContext);
+  const scrollFromRef = useRef(null);
+
+  const scrollToRef = useCallback(
+    node => {
+      setTimeout(() => {
+        if (!isLoading) {
+          console.log('ready to scroll');
+
+          if (node && scrollFromRef && scrollFromRef.current) {
+            console.log('scrolling');
+            setReplyingTo(scrollToId);
+            scrollFromRef.current.scrollTo({x: 0, y: 0, animated: false});
+            setIsLoading(false);
+            setTimeout(() => {
+              node.measure((x, y, width, height, pageX, pageY) => {
+                console.log(x, y, width, height, pageX, pageY);
+                scrollFromRef.current.scrollTo({
+                  x: 0,
+                  y: pageY - 100 - 100,
+                  animated: true,
+                });
+              });
+            }, 10);
+            setScrollToId(null);
+          }
+        }
+      }, 200);
+    },
+    [isLoading],
+  );
+
   function addCommentsToRootArticle(newComments) {
     if (rootArticle) {
       for (const newComment of newComments) {
-        if (newComment.parentid == -1) {
-          const commentAlreadyThere = rootArticle.children.filter(
-            c => c.id == newComment.id,
-          );
-          if (commentAlreadyThere.length == 0) {
-            rootArticle.children.push(newComment);
-          }
-        } else {
-          let chs = rootArticle.children;
-          console.log('chs', chs);
-          let queue = [...rootArticle.children];
-          while (queue.length > 0) {
-            let currentComment = queue.shift();
-            if (currentComment) {
-              if (currentComment.id == newComment.parentid) {
-                const commentAlreadyThere = currentComment.children.filter(
-                  c => c.id == newComment.id,
-                );
-                if (commentAlreadyThere.length == 0) {
-                  currentComment.children.push(newComment);
+        if (newComment.rootid == rootThread.id) {
+          if (newComment.parentid == -1) {
+            const commentAlreadyThere = rootArticle.children.filter(
+              c => c.id == newComment.id,
+            );
+            if (commentAlreadyThere.length == 0) {
+              rootArticle.children.push(newComment);
+            }
+          } else {
+            let chs = rootArticle.children;
+            console.log('chs', chs);
+            let queue = [...rootArticle.children];
+            while (queue.length > 0) {
+              let currentComment = queue.shift();
+              if (currentComment) {
+                if (currentComment.id == newComment.parentid) {
+                  const commentAlreadyThere = currentComment.children.filter(
+                    c => c.id == newComment.id,
+                  );
+                  if (commentAlreadyThere.length == 0) {
+                    currentComment.children.push(newComment);
+                  }
+                  break;
+                } else {
+                  currentComment.children.map(comment => {
+                    queue.push(comment);
+                  });
                 }
-                break;
-              } else {
-                currentComment.children.map(comment => {
-                  queue.push(comment);
-                });
               }
             }
           }
@@ -309,9 +314,13 @@ const ArticleDetails = () => {
 
   useEffect(() => {
     if (articleId) {
+      setIsLoading(true);
       const promise = axios.get(API_URL + '/api/article/' + articleId);
       promise.then(response => {
         setRootArticle(response.data.article);
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1000);
       });
     }
   }, [articleId]);
@@ -576,98 +585,106 @@ const ArticleDetails = () => {
 
   return (
     <Container>
-      <AvoidSoftInputView>
-        {/* Display article comments */}
-        <ScrollView ref={scrollFromRef}>
-          <ArticleTitle>
-            {editingTo == -1 &&
-            rootArticle &&
-            setOnceEditArticleTitle(rootArticle.title) ? (
-              <CommentForm>
-                <NewCommentInput
-                  placeholder="Edit this title"
-                  value={editArticleTitle}
-                  onChangeText={text => setEditArticleTitle(text)}
+      {isLoading ? (
+        <CenterContent>
+          <LottieView
+            source={require('../images/rocket-loader.json')}
+            style={{
+              width: 250,
+              height: 250,
+            }}
+            autoPlay
+            loop
+          />
+        </CenterContent>
+      ) : (
+        <AvoidSoftInputView>
+          {/* Display article comments */}
+          <ScrollView ref={scrollFromRef}>
+            <ArticleTitle>
+              {editingTo == -1 &&
+              rootArticle &&
+              setOnceEditArticleTitle(rootArticle.title) ? (
+                <CommentForm>
+                  <NewCommentInput
+                    placeholder="Edit this title"
+                    value={editArticleTitle}
+                    onChangeText={text => setEditArticleTitle(text)}
+                  />
+                </CommentForm>
+              ) : (
+                rootArticle && rootArticle.title
+              )}
+            </ArticleTitle>
+            <HeadingContainer>
+              {rootArticle && (
+                <Image
+                  source={{uri: rootArticle.image}}
+                  style={{width: '100%', height: 300}}
                 />
-              </CommentForm>
-            ) : (
-              rootArticle && rootArticle.title
+              )}
+              <MetaDataContainer>
+                <ArticleAuthorDetails>
+                  {rootArticle && rootArticle.username}
+                </ArticleAuthorDetails>
+                <ArticleDateDetails>
+                  {rootArticle && rootArticle.time}
+                </ArticleDateDetails>
+              </MetaDataContainer>
+            </HeadingContainer>
+            <BodyContainer>
+              {rootArticle?.sections.map(renderSection)}
+            </BodyContainer>
+            <ArticleContent>
+              {editingTo == -1 &&
+              rootArticle &&
+              setOnceEditCommentText(rootArticle.content) ? (
+                <CommentForm>
+                  <NewCommentInput
+                    placeholder="Edit this comment"
+                    value={editCommentText}
+                    onChangeText={text => setEditCommentText(text)}
+                  />
+                </CommentForm>
+              ) : (
+                rootArticle && rootArticle.content
+              )}
+            </ArticleContent>
+            {rootArticle && rootArticle.userid.toString() == userId && (
+              <>
+                {editingTo == -1 ? (
+                  <>
+                    <CommentButton
+                      disabled={isDisabledEditComment}
+                      onPress={handleSubmitEditArticle}>
+                      <CommentButtonText>Submit Edit</CommentButtonText>
+                    </CommentButton>
+                    <CommentButton
+                      disabled={isDisabledEditComment}
+                      onPress={handleCancelEditComment}>
+                      <CommentButtonText>Cancel Edit</CommentButtonText>
+                    </CommentButton>
+                  </>
+                ) : null}
+              </>
             )}
-          </ArticleTitle>
-          <HeadingContainer>
-            {rootArticle && (
-              <Image
-                source={{uri: rootArticle.image}}
-                style={{width: '100%', height: 300}}
+            {rootArticle &&
+              rootArticle.children.map(comment => renderItem(comment))}
+            <CommentForm>
+              <NewCommentInput
+                placeholder="Write a comment..."
+                value={newComment}
+                onChangeText={text => setNewComment(text)}
               />
-            )}
-            <MetaDataContainer>
-              <ArticleAuthorDetails>
-                {rootArticle && rootArticle.username}
-              </ArticleAuthorDetails>
-              <ArticleDateDetails>
-                {rootArticle && rootArticle.time}
-              </ArticleDateDetails>
-            </MetaDataContainer>
-          </HeadingContainer>
-          <BodyContainer>
-            {rootArticle?.sections.map(renderSection)}
-          </BodyContainer>
-          <ArticleContent>
-            {editingTo == -1 &&
-            rootArticle &&
-            setOnceEditCommentText(rootArticle.content) ? (
-              <CommentForm>
-                <NewCommentInput
-                  placeholder="Edit this comment"
-                  value={editCommentText}
-                  onChangeText={text => setEditCommentText(text)}
-                />
-              </CommentForm>
-            ) : (
-              rootArticle && rootArticle.content
-            )}
-          </ArticleContent>
-          {rootArticle && rootArticle.userid.toString() == userId && (
-            <>
-              {editingTo == -1 ? (
-                <>
-                  <CommentButton
-                    disabled={isDisabledEditComment}
-                    onPress={handleSubmitEditArticle}>
-                    <CommentButtonText>Submit Edit</CommentButtonText>
-                  </CommentButton>
-                  <CommentButton
-                    disabled={isDisabledEditComment}
-                    onPress={handleCancelEditComment}>
-                    <CommentButtonText>Cancel Edit</CommentButtonText>
-                  </CommentButton>
-                </>
-              ) : null}
-            </>
-          )}
-          {rootArticle &&
-            rootArticle.children.map(comment => renderItem(comment))}
-          <CommentForm>
-            <NewCommentInput
-              placeholder="Write a comment..."
-              value={newComment}
-              onChangeText={text => setNewComment(text)}
-            />
-            <CommentButton onPress={handleAddComment}>
-              <CommentButtonText>Post Comment</CommentButtonText>
-            </CommentButton>
-          </CommentForm>
-        </ScrollView>
-      </AvoidSoftInputView>
+              <CommentButton onPress={handleAddComment}>
+                <CommentButtonText>Post Comment</CommentButtonText>
+              </CommentButton>
+            </CommentForm>
+          </ScrollView>
+        </AvoidSoftInputView>
+      )}
     </Container>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default ArticleDetails;

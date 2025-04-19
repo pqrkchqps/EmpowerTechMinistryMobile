@@ -26,6 +26,14 @@ import axios from '../utils/axios';
 import config from '../utils/env';
 const {API_URL} = config;
 import {useFocusEffect} from '@react-navigation/native';
+import LottieView from 'lottie-react-native';
+
+const CenterContent = styled.View`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+`;
 
 // Styled components
 const Container = styled.View`
@@ -134,37 +142,7 @@ const ThreadDetails = () => {
     useContext(CommentContext);
 
   const {threadId} = useContext(ThreadContext);
-  const scrollFromRef = useRef(null);
-  function useHookWithRefCallback() {
-    const ref = useRef(null);
-    const setRef = useCallback(node => {
-      if (ref.current) {
-        // Make sure to cleanup any events/references added to the last instance
-      }
-
-      if (node && scrollFromRef && scrollFromRef.current) {
-        setReplyingTo(scrollToId);
-        scrollFromRef.current.scrollTo({x: 0, y: 0, animated: false});
-        setTimeout(() => {
-          node.measure((x, y, width, height, pageX, pageY) => {
-            console.log(x, y, width, height, pageX, pageY);
-            scrollFromRef.current.scrollTo({
-              x: 0,
-              y: pageY - 100 - 100,
-              animated: true,
-            });
-          });
-        }, 1000);
-        setScrollToId(null);
-      }
-
-      // Save a reference to the node
-      ref.current = node;
-    }, []);
-
-    return [setRef];
-  }
-  const [scrollToRef] = useHookWithRefCallback();
+  const [isLoading, setIsLoading] = useState(true);
 
   const [newComment, setNewComment] = useState('');
   const [newReply, setNewReply] = useState('');
@@ -180,35 +158,67 @@ const ThreadDetails = () => {
     useState(false);
   const [editThreadTitle, setEditThreadTitle] = useState(false);
 
+  const scrollFromRef = useRef(null);
+
+  const scrollToRef = useCallback(
+    node => {
+      setTimeout(() => {
+        if (!isLoading) {
+          console.log('ready to scroll');
+
+          if (node && scrollFromRef && scrollFromRef.current) {
+            console.log('scrolling');
+            setReplyingTo(scrollToId);
+            scrollFromRef.current.scrollTo({x: 0, y: 0, animated: false});
+            setIsLoading(false);
+            setTimeout(() => {
+              node.measure((x, y, width, height, pageX, pageY) => {
+                console.log(x, y, width, height, pageX, pageY);
+                scrollFromRef.current.scrollTo({
+                  x: 0,
+                  y: pageY - 100 - 100,
+                  animated: true,
+                });
+              });
+            }, 10);
+            setScrollToId(null);
+          }
+        }
+      }, 200);
+    },
+    [isLoading],
+  );
   function addCommentsToRootThread(newComments) {
     if (rootThread) {
       for (const newComment of newComments) {
-        if (newComment.parentid == -1) {
-          const commentAlreadyThere = rootThread.children.filter(
-            c => c.id == newComment.id,
-          );
-          if (commentAlreadyThere.length == 0) {
-            rootThread.children.push(newComment);
-          }
-        } else {
-          let chs = rootThread.children;
-          console.log('chs', chs);
-          let queue = [...rootThread.children];
-          while (queue.length > 0) {
-            let currentComment = queue.shift();
-            if (currentComment) {
-              if (currentComment.id == newComment.parentid) {
-                const commentAlreadyThere = currentComment.children.filter(
-                  c => c.id == newComment.id,
-                );
-                if (commentAlreadyThere.length == 0) {
-                  currentComment.children.push(newComment);
+        if (newComment.rootid == rootThread.id) {
+          if (newComment.parentid == -1) {
+            const commentAlreadyThere = rootThread.children.filter(
+              c => c.id == newComment.id,
+            );
+            if (commentAlreadyThere.length == 0) {
+              rootThread.children.push(newComment);
+            }
+          } else {
+            let chs = rootThread.children;
+            console.log('chs', chs);
+            let queue = [...rootThread.children];
+            while (queue.length > 0) {
+              let currentComment = queue.shift();
+              if (currentComment) {
+                if (currentComment.id == newComment.parentid) {
+                  const commentAlreadyThere = currentComment.children.filter(
+                    c => c.id == newComment.id,
+                  );
+                  if (commentAlreadyThere.length == 0) {
+                    currentComment.children.push(newComment);
+                  }
+                  break;
+                } else {
+                  currentComment.children.map(comment => {
+                    queue.push(comment);
+                  });
                 }
-                break;
-              } else {
-                currentComment.children.map(comment => {
-                  queue.push(comment);
-                });
               }
             }
           }
@@ -284,9 +294,11 @@ const ThreadDetails = () => {
 
   useEffect(() => {
     if (threadId) {
+      setIsLoading(true);
       const promise = axios.get(API_URL + '/api/thread/' + threadId);
       promise.then(response => {
         setRootThread(response.data.thread);
+        setIsLoading(false);
       });
     }
   }, [threadId]);
@@ -540,85 +552,99 @@ const ThreadDetails = () => {
 
   return (
     <Container>
-      <AvoidSoftInputView>
-        {/* Display thread comments */}
-        <ScrollView ref={scrollFromRef}>
-          <ThreadTitle>
-            {editingTo == -1 &&
-            rootThread &&
-            setOnceEditArticleTitle(rootThread.title) ? (
-              <CommentForm>
-                <NewCommentInput
-                  placeholder="Edit this title"
-                  value={editThreadTitle}
-                  onChangeText={text => setEditThreadTitle(text)}
-                />
-              </CommentForm>
-            ) : (
-              rootThread && rootThread.title
-            )}
-          </ThreadTitle>
-          <HeadingContainer>
-            <ThreadAuthorDetails>
-              {rootThread && rootThread.username}
-            </ThreadAuthorDetails>
-            <ThreadDateDetails>
-              {rootThread && rootThread.month}/{rootThread && rootThread.day}
-              {'/'}
-              {rootThread && rootThread.year}
-            </ThreadDateDetails>
-          </HeadingContainer>
-          <ThreadContent>
-            {editingTo == -1 &&
-            rootThread &&
-            setOnceEditCommentText(rootThread.content) ? (
-              <CommentForm>
-                <NewCommentInput
-                  placeholder="Edit this comment"
-                  value={editCommentText}
-                  onChangeText={text => setEditCommentText(text)}
-                />
-              </CommentForm>
-            ) : (
-              rootThread && rootThread.content
-            )}
-          </ThreadContent>
-          {rootThread && rootThread.userid.toString() == userId && (
-            <>
-              {editingTo == -1 ? (
-                <>
-                  <CommentButton
-                    disabled={isDisabledEditComment}
-                    onPress={handleSubmitEditThread}>
-                    <CommentButtonText>Submit Edit</CommentButtonText>
-                  </CommentButton>
-                  <CommentButton
-                    disabled={isDisabledEditComment}
-                    onPress={handleCancelEditComment}>
-                    <CommentButtonText>Cancel Edit</CommentButtonText>
-                  </CommentButton>
-                </>
+      {isLoading ? (
+        <CenterContent>
+          <LottieView
+            source={require('../images/rocket-loader.json')}
+            style={{
+              width: 250,
+              height: 250,
+            }}
+            autoPlay
+            loop
+          />
+        </CenterContent>
+      ) : (
+        <AvoidSoftInputView>
+          {/* Display thread comments */}
+          <ScrollView ref={scrollFromRef}>
+            <ThreadTitle>
+              {editingTo == -1 &&
+              rootThread &&
+              setOnceEditArticleTitle(rootThread.title) ? (
+                <CommentForm>
+                  <NewCommentInput
+                    placeholder="Edit this title"
+                    value={editThreadTitle}
+                    onChangeText={text => setEditThreadTitle(text)}
+                  />
+                </CommentForm>
               ) : (
-                <CommentButton onPress={() => setEditingTo(-1)}>
-                  <CommentButtonText>Edit</CommentButtonText>
-                </CommentButton>
+                rootThread && rootThread.title
               )}
-            </>
-          )}
-          {rootThread &&
-            rootThread.children.map(comment => renderItem(comment))}
-          <CommentForm>
-            <NewCommentInput
-              placeholder="Write a comment..."
-              value={newComment}
-              onChangeText={text => setNewComment(text)}
-            />
-            <CommentButton onPress={handleAddComment}>
-              <CommentButtonText>Post Comment</CommentButtonText>
-            </CommentButton>
-          </CommentForm>
-        </ScrollView>
-      </AvoidSoftInputView>
+            </ThreadTitle>
+            <HeadingContainer>
+              <ThreadAuthorDetails>
+                {rootThread && rootThread.username}
+              </ThreadAuthorDetails>
+              <ThreadDateDetails>
+                {rootThread && rootThread.month}/{rootThread && rootThread.day}
+                {'/'}
+                {rootThread && rootThread.year}
+              </ThreadDateDetails>
+            </HeadingContainer>
+            <ThreadContent>
+              {editingTo == -1 &&
+              rootThread &&
+              setOnceEditCommentText(rootThread.content) ? (
+                <CommentForm>
+                  <NewCommentInput
+                    placeholder="Edit this comment"
+                    value={editCommentText}
+                    onChangeText={text => setEditCommentText(text)}
+                  />
+                </CommentForm>
+              ) : (
+                rootThread && rootThread.content
+              )}
+            </ThreadContent>
+            {rootThread && rootThread.userid.toString() == userId && (
+              <>
+                {editingTo == -1 ? (
+                  <>
+                    <CommentButton
+                      disabled={isDisabledEditComment}
+                      onPress={handleSubmitEditThread}>
+                      <CommentButtonText>Submit Edit</CommentButtonText>
+                    </CommentButton>
+                    <CommentButton
+                      disabled={isDisabledEditComment}
+                      onPress={handleCancelEditComment}>
+                      <CommentButtonText>Cancel Edit</CommentButtonText>
+                    </CommentButton>
+                  </>
+                ) : (
+                  <CommentButton onPress={() => setEditingTo(-1)}>
+                    <CommentButtonText>Edit</CommentButtonText>
+                  </CommentButton>
+                )}
+              </>
+            )}
+            {rootThread &&
+              rootThread.children.map(comment => renderItem(comment))}
+            <CommentForm>
+              <NewCommentInput
+                placeholder="Write a comment..."
+                value={newComment}
+                onChangeText={text => setNewComment(text)}
+              />
+              <CommentButton onPress={handleAddComment}>
+                <CommentButtonText>Post Comment</CommentButtonText>
+              </CommentButton>
+            </CommentForm>
+          </ScrollView>
+        </AvoidSoftInputView>
+      )}
     </Container>
   );
 };

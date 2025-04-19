@@ -2,7 +2,6 @@ import React, {useCallback, useContext, useEffect, useRef, useState} from 'react
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   FlatList,
   TouchableOpacity,
@@ -181,11 +180,5 @@ const Articles = ({navigation, scrollToId}) => {
     </Container>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default Articles;
