@@ -17,9 +17,13 @@ import config from './utils/env';
 const {API_URL, SOCKET_URL} = config;
 import {name as appName} from './app.json';
 import {getUniqueId} from 'react-native-device-info';
-import firebase from '@react-native-firebase/app';
+import {getApp, initializeApp} from 'firebase/app';
 
-import messaging from '@react-native-firebase/messaging';
+import {
+  getMessaging,
+  onMessage,
+  onNotificationOpenedApp,
+} from '@react-native-firebase/messaging';
 
 import {
   View,
@@ -146,9 +150,28 @@ export function App() {
     apiKey: 'AIzaSyDeA8l8Xcq2L1tM3DI7X4n1YmaDbdT3pJE',
   };
 
-  const initializeApp = async () => {
+  const initializeFirebase = async () => {
     try {
-      await firebase.initializeApp(firebaseConfig);
+      initializeApp(firebaseConfig);
+      const firebaseApp = getApp();
+      const messaging = getMessaging(firebaseApp);
+
+      // Register background handler
+      messaging.setBackgroundMessageHandler(async remoteMessage => {
+        console.log('Message handled in the background!', remoteMessage);
+        routeNotification(JSON.parse(remoteMessage.data.payload));
+      });
+
+      onMessage(messaging, async remoteMessage => {
+        console.log('Message handled in the foreground!', remoteMessage);
+        routeNotification(JSON.parse(remoteMessage.data.payload));
+      });
+
+      messaging.onNotificationOpenedApp(remoteMessage => {
+        console.log(remoteMessage);
+        const notification = JSON.parse(remoteMessage.data.payload);
+        routeNotificationToClick(notification);
+      });
     } catch (err) {
       console.log(err);
     }
@@ -164,29 +187,6 @@ export function App() {
         break;
     }
   }
-
-  // Register background handler
-  messaging().setBackgroundMessageHandler(async remoteMessage => {
-    console.log('Message handled in the background!', remoteMessage);
-    routeNotification(JSON.parse(remoteMessage.data.payload));
-  });
-
-  messaging().onMessage(async remoteMessage => {
-    console.log('Message handled in the foreground!', remoteMessage);
-    routeNotification(JSON.parse(remoteMessage.data.payload));
-  });
-
-  useEffect(() => {
-    initializeApp();
-  }, []);
-
-  messaging().onNotificationOpenedApp(remoteMessage => {
-    console.log(remoteMessage);
-    const notification = JSON.parse(remoteMessage.data.payload);
-    routeNotificationToClick(notification);
-  });
-
-  messaging().onPress;
 
   function routeNotificationToClick(notification) {
     switch (notification.type) {
@@ -219,57 +219,23 @@ export function App() {
   }
 
   function setSockets() {
-    let uidInterval = null;
-    let notificationsIntervals = [];
+    let tokenInterval = null;
 
     socket.on('connect', () => {
-      getUniqueId().then(uid => {
-        messaging()
-          .getToken()
-          .then(token => {
-            console.log('uid, token', uid, token);
-            socket.emit('uid', {uid, token});
-            uidInterval = setInterval(function () {
-              socket.emit('uid', {uid, token});
-            }, 500);
-          });
-      });
-    });
-
-    socket.on('uidRecieved', () => {
-      if (uidInterval) {
-        clearInterval(uidInterval);
-        uidInterval = null;
-      }
-    });
-
-    socket.on('notificationsAck', type => {
-      clearInterval(notificationsIntervals[type]);
-      notificationsIntervals[type] = null;
-    });
-
-    socket.on('newNotifications', async notifications => {
-      getUniqueId().then(uid => {
-        socket.emit('notificationsRecieved', {
-          uid,
-          type: notifications.type,
+      messaging()
+        .getToken()
+        .then(token => {
+          socket.emit('token', {token});
+          tokenInterval = setInterval(function () {
+            socket.emit('token', {token});
+          }, 500);
         });
-        notificationsIntervals[notifications.type] = setInterval(function () {
-          socket.emit('notificationsRecieved', {
-            uid,
-            type: notifications.type,
-          });
-        }, 500);
-      });
+    });
 
-      console.log('newNotifications', notifications);
-      switch (notifications.type) {
-        case 'thread':
-          setSocketThreads(notifications.data);
-          break;
-        case 'comment':
-          setThreadComments(notifications.data);
-          break;
+    socket.on('tokenRecieved', () => {
+      if (tokenInterval) {
+        clearInterval(tokenInterval);
+        tokenInterval = null;
       }
     });
 
@@ -281,6 +247,7 @@ export function App() {
   useEffect(() => {
     setSockets();
     loadLoginDetails();
+    initializeFirebase();
   }, []);
 
   const appState = useRef(AppState.currentState);
