@@ -135,6 +135,7 @@ export function App() {
   const {setSocketComments, setScrollToId} = useContext(CommentContext);
   const {setSocketThreads, setThreadId} = useContext(ThreadContext);
   const {setArticleId} = useContext(ArticleContext);
+  const [messaging, setMessaging] = useState(null);
 
   useEffect(() => {
     if (error?.response?.status == 401) {
@@ -155,6 +156,7 @@ export function App() {
       initializeApp(firebaseConfig);
       const firebaseApp = getApp();
       const messaging = getMessaging(firebaseApp);
+      setMessaging(messaging);
 
       // Register background handler
       messaging.setBackgroundMessageHandler(async remoteMessage => {
@@ -222,14 +224,12 @@ export function App() {
     let tokenInterval = null;
 
     socket.on('connect', () => {
-      messaging()
-        .getToken()
-        .then(token => {
+      messaging.getToken().then(token => {
+        socket.emit('token', {token});
+        tokenInterval = setInterval(function () {
           socket.emit('token', {token});
-          tokenInterval = setInterval(function () {
-            socket.emit('token', {token});
-          }, 500);
-        });
+        }, 500);
+      });
     });
 
     socket.on('tokenRecieved', () => {
@@ -245,9 +245,9 @@ export function App() {
   }
 
   useEffect(() => {
+    initializeFirebase();
     setSockets();
     loadLoginDetails();
-    initializeFirebase();
   }, []);
 
   const appState = useRef(AppState.currentState);

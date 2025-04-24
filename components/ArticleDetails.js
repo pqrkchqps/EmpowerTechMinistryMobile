@@ -117,6 +117,11 @@ const CommentDateDetails = styled.Text`
 `;
 
 const CommentForm = styled.View`
+  margin-top: 5x;
+  padding-top: 10px;
+`;
+
+const RootCommentForm = styled.View`
   margin-top: 10px;
   border-top-width: 1px;
   border-top-color: #ccc;
@@ -205,7 +210,7 @@ const ArticleDetails = () => {
         }
       }, 200);
     },
-    [isLoading],
+    [isLoading, scrollToId],
   );
 
   function addCommentsToRootArticle(newComments) {
@@ -670,7 +675,7 @@ const ArticleDetails = () => {
             )}
             {rootArticle &&
               rootArticle.children.map(comment => renderItem(comment))}
-            <CommentForm>
+            <RootCommentForm>
               <NewCommentInput
                 placeholder="Write a comment..."
                 value={newComment}
@@ -679,7 +684,7 @@ const ArticleDetails = () => {
               <CommentButton onPress={handleAddComment}>
                 <CommentButtonText>Post Comment</CommentButtonText>
               </CommentButton>
-            </CommentForm>
+            </RootCommentForm>
           </ScrollView>
         </AvoidSoftInputView>
       )}

@@ -99,10 +99,15 @@ const CommentDateDetails = styled.Text`
 `;
 
 const CommentForm = styled.View`
-  margin-top: 20px;
+  margin-top: 5x;
+  padding-top: 10px;
+`;
+
+const RootCommentForm = styled.View`
+  margin-top: 10px;
   border-top-width: 1px;
   border-top-color: #ccc;
-  padding-top: 10px;
+  padding-top: 20px;
 `;
 
 const NewCommentInput = styled.TextInput.attrs({
@@ -167,13 +172,12 @@ const ThreadDetails = () => {
           console.log('ready to scroll');
 
           if (node && scrollFromRef && scrollFromRef.current) {
-            console.log('scrolling');
+            console.log('scrolling2', scrollToId);
             setReplyingTo(scrollToId);
             scrollFromRef.current.scrollTo({x: 0, y: 0, animated: false});
             setIsLoading(false);
             setTimeout(() => {
               node.measure((x, y, width, height, pageX, pageY) => {
-                console.log(x, y, width, height, pageX, pageY);
                 scrollFromRef.current.scrollTo({
                   x: 0,
                   y: pageY - 100 - 100,
@@ -186,7 +190,7 @@ const ThreadDetails = () => {
         }
       }, 200);
     },
-    [isLoading],
+    [isLoading, scrollToId],
   );
   function addCommentsToRootThread(newComments) {
     if (rootThread) {
@@ -632,7 +636,7 @@ const ThreadDetails = () => {
             )}
             {rootThread &&
               rootThread.children.map(comment => renderItem(comment))}
-            <CommentForm>
+            <RootCommentForm>
               <NewCommentInput
                 placeholder="Write a comment..."
                 value={newComment}
@@ -641,7 +645,7 @@ const ThreadDetails = () => {
               <CommentButton onPress={handleAddComment}>
                 <CommentButtonText>Post Comment</CommentButtonText>
               </CommentButton>
-            </CommentForm>
+            </RootCommentForm>
           </ScrollView>
         </AvoidSoftInputView>
       )}
