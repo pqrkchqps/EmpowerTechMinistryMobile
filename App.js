@@ -21,6 +21,7 @@ import {getApp, initializeApp} from 'firebase/app';
 
 import {
   getMessaging,
+  getToken,
   onMessage,
   onNotificationOpenedApp,
 } from '@react-native-firebase/messaging';
@@ -135,7 +136,6 @@ export function App() {
   const {setSocketComments, setScrollToId} = useContext(CommentContext);
   const {setSocketThreads, setThreadId} = useContext(ThreadContext);
   const {setArticleId} = useContext(ArticleContext);
-  const [messaging, setMessaging] = useState(null);
 
   useEffect(() => {
     if (error?.response?.status == 401) {
@@ -155,8 +155,7 @@ export function App() {
     try {
       initializeApp(firebaseConfig);
       const firebaseApp = getApp();
-      const messaging = getMessaging(firebaseApp);
-      setMessaging(messaging);
+      const messaging = await getMessaging(firebaseApp);
 
       // Register background handler
       messaging.setBackgroundMessageHandler(async remoteMessage => {
@@ -174,6 +173,7 @@ export function App() {
         const notification = JSON.parse(remoteMessage.data.payload);
         routeNotificationToClick(notification);
       });
+      return messaging;
     } catch (err) {
       console.log(err);
     }
@@ -223,13 +223,14 @@ export function App() {
   function setSockets() {
     let tokenInterval = null;
 
-    socket.on('connect', () => {
-      messaging.getToken().then(token => {
+    socket.on('connect', async () => {
+      console.log('connect');
+      const messaging = await initializeFirebase();
+      const token = await getToken(messaging);
+      socket.emit('token', {token});
+      tokenInterval = setInterval(function () {
         socket.emit('token', {token});
-        tokenInterval = setInterval(function () {
-          socket.emit('token', {token});
-        }, 500);
-      });
+      }, 500);
     });
 
     socket.on('tokenRecieved', () => {

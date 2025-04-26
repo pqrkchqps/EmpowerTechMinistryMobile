@@ -216,7 +216,7 @@ const ArticleDetails = () => {
   function addCommentsToRootArticle(newComments) {
     if (rootArticle) {
       for (const newComment of newComments) {
-        if (newComment.rootid == rootThread.id) {
+        if (newComment.rootid == rootArticle.id) {
           if (newComment.parentid == -1) {
             const commentAlreadyThere = rootArticle.children.filter(
               c => c.id == newComment.id,
