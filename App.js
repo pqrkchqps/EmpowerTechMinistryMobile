@@ -16,7 +16,6 @@ import * as Keychain from 'react-native-keychain';
 import config from './utils/env';
 const {API_URL, SOCKET_URL} = config;
 import {name as appName} from './app.json';
-import {getUniqueId} from 'react-native-device-info';
 import {getApp, initializeApp} from 'firebase/app';
 
 import {
@@ -24,6 +23,7 @@ import {
   getToken,
   onMessage,
   onNotificationOpenedApp,
+  setBackgroundMessageHandler,
 } from '@react-native-firebase/messaging';
 
 import {
@@ -40,10 +40,9 @@ import {
 } from 'react-native';
 import styled from 'styled-components/native';
 import axios from './utils/axios';
-import {isTemplateSpan} from 'typescript';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {wrapScrollView} from 'react-native-scroll-into-view';
-import {RouteContext, RouteProvider} from './components/RouteContext';
+import {RouteContext} from './components/RouteContext';
 import {useContext} from 'react';
 import {CommentContext} from './components/CommentContext';
 import {ThreadContext} from './components/ThreadContext';
@@ -158,7 +157,7 @@ export function App() {
       const messaging = await getMessaging(firebaseApp);
 
       // Register background handler
-      messaging.setBackgroundMessageHandler(async remoteMessage => {
+      setBackgroundMessageHandler(messaging, async remoteMessage => {
         console.log('Message handled in the background!', remoteMessage);
         routeNotification(JSON.parse(remoteMessage.data.payload));
       });
@@ -168,7 +167,7 @@ export function App() {
         routeNotification(JSON.parse(remoteMessage.data.payload));
       });
 
-      messaging.onNotificationOpenedApp(remoteMessage => {
+      onNotificationOpenedApp(messaging, remoteMessage => {
         console.log(remoteMessage);
         const notification = JSON.parse(remoteMessage.data.payload);
         routeNotificationToClick(notification);
@@ -457,7 +456,11 @@ export function App() {
                 lazy={false}
                 initialRouteName="Articles"
                 screenOptions={({route}) => ({
-                  tabBarStyle: {backgroundColor: '#010049', paddingTop: 10},
+                  tabBarStyle: {
+                    backgroundColor: '#010049',
+                    paddingTop: 10,
+                    height: 120,
+                  },
                   tabBarIcon: ({focused, color, size}) => {
                     let iconName;
                     iconName = focused ? 'rocket' : 'circle';
